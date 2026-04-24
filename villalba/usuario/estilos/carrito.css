@@ -1,0 +1,177 @@
+.main-carrito {
+    display: flex;
+    justify-content: center;
+    padding: 50px 20px;
+    background-color: #f4f4f4;
+    min-height: calc(100vh - 80px);
+}
+
+.tabla-contenedor {
+    background: #ffffff;
+    width: 100%;
+    max-width: 900px;
+    border: 1px solid #ddd;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.decoracion-barra {
+    height: 4px;
+    background: linear-gradient(90deg, midnightblue, #00d4ff);
+    width: 100%;
+}
+
+.cabecera-carrito {
+    padding: 30px 40px 10px 40px;
+}
+
+.etiqueta-estado {
+    display: inline-block;
+    background: #eef2ff;
+    color: midnightblue;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.cabecera-carrito h1 {
+    color: midnightblue;
+    font-family: 'Franklin Gothic Medium', Arial;
+    margin: 0;
+}
+
+/* Tabla Estilo Tech */
+.tabla-tech {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.tabla-tech th {
+    background: #fafafa;
+    color: #888;
+    font-size: 12px;
+    padding: 15px 40px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.tabla-tech td {
+    padding: 20px 40px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #444;
+}
+
+.nombre-p { font-weight: bold; color: midnightblue; }
+
+.controles-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-operacion {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 25px;
+    height: 25px;
+    background: #eee;
+    color: #333;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-operacion:hover { background: #00d4ff; color: white; }
+
+.cantidad-num { font-weight: bold; min-width: 20px; text-align: center; }
+
+.stock-limite { font-size: 10px; color: #ff4444; font-weight: bold; }
+
+.subtotal-p { font-weight: bold; color: #333; }
+
+.vacio { padding: 40px !important; color: #aaa !important; font-style: italic; }
+
+.footer-tabla {
+    padding: 30px 40px;
+    background: #fafafa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-seccion span { font-size: 12px; color: #888; font-weight: bold; }
+.total-seccion h2 { margin: 0; color: midnightblue; font-size: 32px; }
+
+.btn-finalizar {
+    background: midnightblue;
+    color: white;
+    border: none;
+    padding: 15px 35px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-finalizar:hover {
+    background: #001a35;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.lista-productos-tech {
+    margin-top: 20px;
+}
+
+.fila-producto-carrito {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-p { flex: 2; }
+.info-p p { margin: 0; font-size: 13px; color: #888; }
+
+.controles-p { 
+    flex: 1; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    justify-content: center;
+}
+
+.btn-mini {
+    background: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.btn-mini:hover { background: #00d4ff; color: white; }
+
+.subtotal-p { flex: 1; text-align: right; font-weight: bold; color: midnightblue; }
+
+.total-pedido {
+    margin: 25px 0;
+    text-align: right;
+    border-top: 2px solid midnightblue;
+    padding-top: 15px;
+}
+
+.total-pedido h3 { color: midnightblue; margin: 0; font-size: 24px; }
+
+.max-txt { color: #ff4444; font-size: 10px; font-weight: bold; }

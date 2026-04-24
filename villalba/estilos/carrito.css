@@ -1,0 +1,143 @@
+
+.main-carrito {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+.alerta-sesion {
+    background: #ffffff;
+    width: 100%;
+    max-width: 550px;
+    border: 1px solid #ddd;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.decoracion-barra {
+    height: 4px;
+    background: linear-gradient(90deg, midnightblue, #00d4ff);
+    width: 100%;
+}
+
+.contenido-alerta {
+    padding: 50px 40px;
+    text-align: left;
+}
+
+.etiqueta-estado {
+    display: inline-block;
+    background: #eee;
+    color: #555;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.contenido-alerta h1 {
+    color: midnightblue;
+    font-family: 'Franklin Gothic Medium', Arial;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.contenido-alerta p {
+    color: #444;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 30px;
+}
+
+.detalles-tecnicos {
+    margin-bottom: 40px;
+}
+
+.fila-detalle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.punto {
+    width: 6px;
+    height: 6px;
+    background-color: #00d4ff;
+    border-radius: 50%;
+}
+
+.fila-detalle p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.acciones-carrito {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-ingreso {
+    background-color: midnightblue;
+    color: white;
+    padding: 15px 30px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.btn-ingreso:hover {
+    background-color: #001a35;
+}
+
+.separador {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.btn-registro-link {
+    color: midnightblue;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 1px solid transparent;
+}
+
+.btn-registro-link:hover {
+    border-bottom: 1px solid midnightblue;
+}
+
+.footer-alerta {
+    background: #fafafa;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+.footer-alerta a {
+    color: #888;
+    font-size: 12px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer-alerta a:hover {
+    color: midnightblue;
+}
+
+@media (max-width: 600px) {
+    .acciones-carrito {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .btn-ingreso { text-align: center; }
+}

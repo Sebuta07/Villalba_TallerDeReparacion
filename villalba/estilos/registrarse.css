@@ -1,0 +1,66 @@
+#contenedor-registro {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 20px;
+}
+
+#cuadro {
+    background: white;
+    width: 400px;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+#titulo h2 {
+    color: midnightblue;
+    text-align: center;
+    margin-bottom: 25px;
+    font-family: 'Franklin Gothic Medium', Arial;
+}
+
+#inputs {
+    display: flex;
+    flex-direction: column;
+}
+
+#inputs label {
+    font-weight: bold;
+    color: #444;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+#inputs input {
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#botones {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+.btn-comprar {
+    width: 100%;
+    cursor: pointer;
+    border: none;
+}
+
+.link-volver {
+    color: midnightblue;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.link-volver:hover {
+    text-decoration: underline;
+}

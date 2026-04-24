@@ -1,0 +1,114 @@
+
+.contenedor-principal-contacto {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+}
+
+.fila-contacto {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+.info-texto {
+    flex: 1;
+    min-width: 300px;
+}
+
+.info-texto h1 {
+    color: midnightblue;
+    font-size: 38px;
+    font-family: 'Franklin Gothic Medium', Arial;
+    margin-bottom: 15px;
+}
+
+.tarjetas-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.tarjeta-info {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-left: 5px solid midnightblue;
+}
+
+.tarjeta-info h3 {
+    margin: 5px 0;
+    color: #333;
+}
+
+.tarjeta-info p {
+    margin: 2px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.formulario-seccion {
+    flex: 1;
+    min-width: 350px;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.form-contacto h3 {
+    color: midnightblue;
+    margin-bottom: 20px;
+}
+
+.form-contacto input, 
+.form-contacto textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.btn-enviar {
+    background-color: midnightblue;
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-enviar:hover {
+    background-color: #001f3f;
+    transform: scale(1.02);
+}
+
+.seccion-mapa h2 {
+    text-align: center;
+    color: midnightblue;
+    margin-bottom: 30px;
+    font-family: 'Franklin Gothic Medium', Arial;
+}
+
+.mapa-marco {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 8px solid white;
+}
+
+@media (max-width: 768px) {
+    .contenedor-principal-contacto { margin: 20px auto; }
+    .info-texto h1 { font-size: 28px; }
+}   
