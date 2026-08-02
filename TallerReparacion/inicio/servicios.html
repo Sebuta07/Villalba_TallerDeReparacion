@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios</title>
+    <link rel="stylesheet" href="../css/general.css">
+</head>
+<body>
+    <header>
+        <div id="header_uno">
+            Sistema de Reparación de Electrónicos
+        </div>
+        <div id="header_dos">
+            <a href="registro.html" class="header_enlace">Registrarse</a>
+            <a href="sesion.html" class="header_enlace">Iniciar Sesión</a>
+        </div>
+    </header>
+
+    <nav id="navbar">
+        <ul id="navbar_lista">
+            <li><a href="index.html" class="nav_enlace">Inicio</a></li>
+            <li><a href="servicios.html" class="nav_enlace activo">Servicios</a></li>
+            <li><a href="productos.html" class="nav_enlace">Productos</a></li>
+            <li><a href="quienes.html" class="nav_enlace">Quiénes Somos</a></li>
+            <li><a href="ubicacion.html" class="nav_enlace">Ubicación</a></li>
+            <li><a href="contacto.html" class="nav_enlace">Contacto</a></li>
+        </ul>
+    </nav>
+
+    <main>
+
+        <div id="bienvenida">
+            <div id="bienvenida_izquierda">
+                <div id="titulo_bienvenida">SERVICIOS</div>
+                <div id="descripcion_bienvenida">
+                    <p>Ofrecemos soluciones completas para la<br>
+                        reparación y mantenimiento de todo tipo<br>
+                        de dispositivos electrónicos.
+                    </p>
+                </div>
+            </div>
+            <div id="bienvenida_derecha">
+                <img src="imagenes/servicios.jpg" alt="Nuestros servicios">
+            </div>
+        </div>
+
+        <section class="seccion_servicios_pagina">
+
+            <div class="servicios_filtros">
+                <h2 class="titulo_seccion">Todos los Servicios</h2>
+                <div class="filtros_contenedor">
+                    <button class="filtro_boton filtro_activo">Todos</button>
+                    <button class="filtro_boton">Pantallas</button>
+                    <button class="filtro_boton">Baterías</button>
+                    <button class="filtro_boton">Software</button>
+                    <button class="filtro_boton">Placas</button>
+                </div>
+            </div>
+
+            <!-- 
+                ======================================================
+                ZONA DE CARGA DINÁMICA CON PHP
+                ======================================================
+                Cuando conectes PHP, reemplazá las tarjetas de abajo
+                por un loop como este:
+
+                <?php foreach ($servicios as $servicio): ?>
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/<?= $servicio['imagen'] ?>" alt="<?= $servicio['nombre'] ?>">
+                        <span class="servicio_categoria"><?= $servicio['categoria'] ?></span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre"><?= $servicio['nombre'] ?></h3>
+                        <p class="servicio_descripcion"><?= $servicio['descripcion'] ?></p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">$ <?= number_format($servicio['precio_desde'], 0, ',', '.') ?></span>
+                            <a href="detalle_servicio.php?id=<?= $servicio['id'] ?>" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                ======================================================
+            -->
+
+            <div class="servicios_grilla">
+
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/pantalla.jpg" alt="Cambio de pantalla">
+                        <span class="servicio_categoria">Pantallas</span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre">Cambio de Pantalla</h3>
+                        <p class="servicio_descripcion">Reemplazo de módulos OLED y LCD para smartphones y tablets. Compatible con todas las marcas y modelos.</p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">Desde $ 15.000</span>
+                            <a href="#" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/bateria.jpg" alt="Cambio de batería">
+                        <span class="servicio_categoria">Baterías</span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre">Reemplazo de Batería</h3>
+                        <p class="servicio_descripcion">Cambio de baterías degradadas para prolongar la vida útil de tu dispositivo. Batería original garantizada.</p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">Desde $ 8.000</span>
+                            <a href="#" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/software.jpg" alt="Reparación de software">
+                        <span class="servicio_categoria">Software</span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre">Reparación de Software</h3>
+                        <p class="servicio_descripcion">Solución de errores del sistema, virus, reinstalación de OS y recuperación de datos perdidos.</p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">Desde $ 5.000</span>
+                            <a href="#" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/placa.jpg" alt="Reparación de placa">
+                        <span class="servicio_categoria">Placas</span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre">Reparación de Placa Base</h3>
+                        <p class="servicio_descripcion">Diagnóstico y reparación de componentes internos, soldadura de micropuntos y daño por líquido.</p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">Desde $ 20.000</span>
+                            <a href="#" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/carga.jpg" alt="Reparación de carga">
+                        <span class="servicio_categoria">Baterías</span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre">Reparación de Puerto de Carga</h3>
+                        <p class="servicio_descripcion">Reemplazo o soldadura del conector de carga. Compatible con USB-C, Micro USB y Lightning.</p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">Desde $ 6.000</span>
+                            <a href="#" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tarjeta_servicio_full">
+                    <div class="servicio_imagen">
+                        <img src="imagenes/servicios/camara.jpg" alt="Reparación de cámara">
+                        <span class="servicio_categoria">Pantallas</span>
+                    </div>
+                    <div class="servicio_cuerpo">
+                        <h3 class="servicio_nombre">Reparación de Cámara</h3>
+                        <p class="servicio_descripcion">Reemplazo de módulos de cámara delantera y trasera. Diagnóstico de errores de enfoque y calidad de imagen.</p>
+                        <div class="servicio_footer">
+                            <span class="servicio_precio">Desde $ 10.000</span>
+                            <a href="#" class="servicio_boton">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer id="footer">
+        <div id="footer_contenido">
+            <div class="footer_columna">
+                <h3 class="footer_titulo">Sistema de Reparaciones</h3>
+                <p class="footer_texto">Solución completa para administrar y controlar todo el proceso de reparación de equipos electrónicos de forma eficiente y segura.</p>
+            </div>
+            <div class="footer_columna">
+                <h3 class="footer_titulo">Navegación</h3>
+                <ul class="footer_lista">
+                    <li><a href="index.html" class="footer_enlace">Inicio</a></li>
+                    <li><a href="servicios.html" class="footer_enlace">Servicios</a></li>
+                    <li><a href="productos.html" class="footer_enlace">Productos</a></li>
+                    <li><a href="quienes.html" class="footer_enlace">Quiénes Somos</a></li>
+                    <li><a href="ubicacion.html" class="footer_enlace">Ubicación</a></li>
+                    <li><a href="contacto.html" class="footer_enlace">Contacto</a></li>
+                </ul>
+            </div>
+            <div class="footer_columna">
+                <h3 class="footer_titulo">Contacto</h3>
+                <ul class="footer_lista">
+                    <li class="footer_texto">EPET N°7 "Arcadio Salemi", Formosa</li>
+                    <li class="footer_texto">Teléfono: +54 11 1234-5678</li>
+                    <li class="footer_texto">Email: contacto@reparaciones.com</li>
+                    <li class="footer_texto">Lunes a Viernes: 9:00 - 18:00</li>
+                </ul>
+            </div>
+        </div>
+        <div id="footer_inferior">
+            <p id="footer_derechos">© 2026 Sistema de Reparación de Electrónicos. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
