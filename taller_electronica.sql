@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS `barrios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `barrios` (
-  `barrios_id` int(11) NOT NULL,
+  `barrios_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`barrios_id`),
@@ -49,9 +49,9 @@ DROP TABLE IF EXISTS `caja_diaria`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `caja_diaria` (
-  `caja_diaria_id` int(11) NOT NULL,
+  `caja_diaria_id` int(11) NOT NULL AUTO_INCREMENT,
   `monto_inicial` int(11) DEFAULT NULL,
-  `ventas_id` int(11) DEFAULT NULL,
+  `venta_id` int(11) DEFAULT NULL,
   `egreso_id` int(11) DEFAULT NULL,
   `hora` datetime DEFAULT NULL,
   `fecha` datetime DEFAULT NULL,
@@ -65,10 +65,15 @@ CREATE TABLE `caja_diaria` (
   KEY `egreso_id_idx` (`egreso_id`),
   KEY `empleado_id_idx` (`empleado_id`),
   KEY `sucursal_id_idx` (`sucursal_id`),
+  KEY `fk_venta_id_idx` (`venta_id`),
+  KEY `fk_venta_id` (`venta_id`),
+  KEY `fk_reparacion_id_idx` (`reparacion_id`),
   CONSTRAINT `fk_caja_egreso` FOREIGN KEY (`egreso_id`) REFERENCES `egreso` (`egreso_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_caja_empleado` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`empleados_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_caja_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_caja_sucursal` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`sucursales_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_caja_sucursal` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`sucursales_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_reparacion` FOREIGN KEY (`reparacion_id`) REFERENCES `reparacion` (`reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_venta` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -119,10 +124,12 @@ DROP TABLE IF EXISTS `calle`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `calle` (
-  `calle_id` int(11) NOT NULL,
+  `calle_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`calle_id`)
+  PRIMARY KEY (`calle_id`),
+  KEY `fk_calle_estado_general_idx` (`estado_general_id`),
+  CONSTRAINT `fk_calle_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -143,10 +150,12 @@ DROP TABLE IF EXISTS `casa`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `casa` (
-  `casa_id` int(11) NOT NULL,
+  `casa_id` int(11) NOT NULL AUTO_INCREMENT,
   `numero` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`casa_id`)
+  PRIMARY KEY (`casa_id`),
+  KEY `fk_casa_estado_general_idx` (`estado_general_id`),
+  CONSTRAINT `fk_casa_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -193,7 +202,7 @@ DROP TABLE IF EXISTS `categorias_productos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `categorias_productos` (
-  `categoria_productos_id` int(11) NOT NULL,
+  `categoria_productos_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`categoria_productos_id`),
@@ -219,7 +228,7 @@ DROP TABLE IF EXISTS `categorias_servicios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `categorias_servicios` (
-  `categorias_servicios_id` int(11) NOT NULL,
+  `categorias_servicios_id` int(11) NOT NULL AUTO_INCREMENT,
   `categoria` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`categorias_servicios_id`),
@@ -271,7 +280,7 @@ DROP TABLE IF EXISTS `clasificacion_usuario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `clasificacion_usuario` (
-  `clasificacion_usuario_id` int(11) NOT NULL,
+  `clasificacion_usuario_id` int(11) NOT NULL AUTO_INCREMENT,
   `clasificacion_usuario` varchar(45) DEFAULT NULL,
   `historial_usuario_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -300,8 +309,10 @@ DROP TABLE IF EXISTS `clientes_telefonos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `clientes_telefonos` (
+  `clientes_telefonos_id` int(11) NOT NULL AUTO_INCREMENT,
   `cliente_id` int(11) NOT NULL,
   `telefono_id` int(11) NOT NULL,
+  PRIMARY KEY (`clientes_telefonos_id`),
   KEY `telefono_id` (`telefono_id`),
   CONSTRAINT `clientes_telefonos_ibfk_2` FOREIGN KEY (`telefono_id`) REFERENCES `telefonos` (`telefono_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -324,7 +335,7 @@ DROP TABLE IF EXISTS `codigo_area`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `codigo_area` (
-  `codigo_area_id` int(11) NOT NULL,
+  `codigo_area_id` int(11) NOT NULL AUTO_INCREMENT,
   `codigo` int(11) NOT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`codigo_area_id`),
@@ -350,7 +361,7 @@ DROP TABLE IF EXISTS `codigo_postal`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `codigo_postal` (
-  `codigo_postal_id` int(11) NOT NULL,
+  `codigo_postal_id` int(11) NOT NULL AUTO_INCREMENT,
   `codigo_postal` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`codigo_postal_id`),
@@ -376,7 +387,7 @@ DROP TABLE IF EXISTS `codigo_productos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `codigo_productos` (
-  `codigo_producto_id` int(11) NOT NULL,
+  `codigo_producto_id` int(11) NOT NULL AUTO_INCREMENT,
   `codigo` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`codigo_producto_id`),
@@ -402,7 +413,7 @@ DROP TABLE IF EXISTS `comision`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `comision` (
-  `comision_id` int(11) NOT NULL,
+  `comision_id` int(11) NOT NULL AUTO_INCREMENT,
   `venta_id` int(11) DEFAULT NULL,
   `comision_fija_id` int(11) DEFAULT NULL,
   `cantidad` int(11) DEFAULT NULL,
@@ -411,8 +422,12 @@ CREATE TABLE `comision` (
   PRIMARY KEY (`comision_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
   KEY `comision_fija_id_idx` (`comision_fija_id`),
+  KEY `fk_reparacion_id_idx` (`reparacion_id`),
+  KEY `fk_venta_id_idx` (`venta_id`),
   CONSTRAINT `fk_comision_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_comision_fija_rel` FOREIGN KEY (`comision_fija_id`) REFERENCES `comision_fija` (`comision_fija_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_comision_fija_rel` FOREIGN KEY (`comision_fija_id`) REFERENCES `comision_fija` (`comision_fija_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_reparacion_id` FOREIGN KEY (`reparacion_id`) REFERENCES `reparacion` (`reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_venta_id` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -433,7 +448,7 @@ DROP TABLE IF EXISTS `comision_fija`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `comision_fija` (
-  `comision_fija_id` int(11) NOT NULL,
+  `comision_fija_id` int(11) NOT NULL AUTO_INCREMENT,
   `amount` int(11) DEFAULT NULL,
   `cantidad` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -460,12 +475,14 @@ DROP TABLE IF EXISTS `comprobantes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `comprobantes` (
+  `comprobante_id` int(11) NOT NULL AUTO_INCREMENT,
   `numero_comprobante` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  `comprobante_id` int(11) NOT NULL,
   `tipo_comprobante_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`comprobante_id`),
   KEY `tipo_comprobante_id_idx` (`tipo_comprobante_id`),
+  KEY `fk_comprobantes_estado_general_idx` (`estado_general_id`),
+  CONSTRAINT `fk_comprobantes_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_comprobantes_tipo` FOREIGN KEY (`tipo_comprobante_id`) REFERENCES `tipo_comprobante` (`tipo_comprobante_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -487,7 +504,7 @@ DROP TABLE IF EXISTS `detalle_envio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `detalle_envio` (
-  `detalle_envio_id` int(11) NOT NULL,
+  `detalle_envio_id` int(11) NOT NULL AUTO_INCREMENT,
   `direccion_id` int(11) DEFAULT NULL,
   `tipo_envio_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -519,7 +536,7 @@ DROP TABLE IF EXISTS `detalle_pedido_sucursales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `detalle_pedido_sucursales` (
-  `detalle_pedido_sucursales_id` int(11) NOT NULL,
+  `detalle_pedido_sucursales_id` int(11) NOT NULL AUTO_INCREMENT,
   `productos_id` int(11) DEFAULT NULL,
   `observaciones` varchar(45) DEFAULT NULL,
   `envios_id` int(11) DEFAULT NULL,
@@ -551,7 +568,7 @@ DROP TABLE IF EXISTS `detalle_reparacion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `detalle_reparacion` (
-  `detalle_reparacion_id` int(11) NOT NULL,
+  `detalle_reparacion_id` int(11) NOT NULL AUTO_INCREMENT,
   `equipo_id` int(11) DEFAULT NULL,
   `diagnostico_id` int(11) DEFAULT NULL,
   `forma_pago_id` int(11) DEFAULT NULL,
@@ -592,7 +609,7 @@ DROP TABLE IF EXISTS `detalle_venta`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `detalle_venta` (
-  `detalle_venta_id` int(11) NOT NULL,
+  `detalle_venta_id` int(11) NOT NULL AUTO_INCREMENT,
   `forma_pago_id` int(11) DEFAULT NULL,
   `amount_id` int(11) DEFAULT NULL,
   `cantidad` int(11) DEFAULT NULL,
@@ -606,6 +623,8 @@ CREATE TABLE `detalle_venta` (
   KEY `forma_pago_id_idx` (`forma_pago_id`),
   KEY `venta_id_idx` (`venta_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
+  KEY `fk_det_garantia_idx` (`garantia_id`),
+  CONSTRAINT `fk_det_garantia` FOREIGN KEY (`garantia_id`) REFERENCES `garantias` (`garantias_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_det_venta_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_det_venta_pago` FOREIGN KEY (`forma_pago_id`) REFERENCES `formas_pago` (`formas_pago_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_det_venta_venta` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
@@ -629,7 +648,7 @@ DROP TABLE IF EXISTS `diagnostico`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `diagnostico` (
-  `diagnostico_id` int(11) NOT NULL,
+  `diagnostico_id` int(11) NOT NULL AUTO_INCREMENT,
   `observaciones` varchar(45) DEFAULT NULL,
   `foto_diagnostico_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -658,7 +677,7 @@ DROP TABLE IF EXISTS `direccion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `direccion` (
-  `direccion_id` int(11) NOT NULL,
+  `direccion_id` int(11) NOT NULL AUTO_INCREMENT,
   `pais_id` int(11) DEFAULT NULL,
   `estado_id` int(11) DEFAULT NULL,
   `ciudad_id` int(11) DEFAULT NULL,
@@ -713,7 +732,7 @@ DROP TABLE IF EXISTS `egreso`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `egreso` (
-  `egreso_id` int(11) NOT NULL,
+  `egreso_id` int(11) NOT NULL AUTO_INCREMENT,
   `egreso` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`egreso_id`),
@@ -739,7 +758,7 @@ DROP TABLE IF EXISTS `empleados`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `empleados` (
-  `empleados_id` int(11) NOT NULL,
+  `empleados_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `apellido` varchar(45) DEFAULT NULL,
   `dni` int(11) DEFAULT NULL,
@@ -764,7 +783,7 @@ CREATE TABLE `empleados` (
   CONSTRAINT `fk_empleados_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_empleados_genero` FOREIGN KEY (`genero_id`) REFERENCES `genero` (`genero_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_empleados_horario` FOREIGN KEY (`horarios_empleado_id`) REFERENCES `horarios_empleado` (`horarios_empleado`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_empleados_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_empleados_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`roles_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_empleados_telefono` FOREIGN KEY (`telefono_id`) REFERENCES `telefonos` (`telefono_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -786,7 +805,7 @@ DROP TABLE IF EXISTS `envios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `envios` (
-  `envios_id` int(11) NOT NULL,
+  `envios_id` int(11) NOT NULL AUTO_INCREMENT,
   `fecha_inicio` date DEFAULT NULL,
   `fecha_entrega` date DEFAULT NULL,
   `precio` int(11) DEFAULT NULL,
@@ -856,7 +875,7 @@ DROP TABLE IF EXISTS `estado`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `estado` (
-  `estado_id` int(11) NOT NULL,
+  `estado_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`estado_id`),
@@ -882,10 +901,10 @@ DROP TABLE IF EXISTS `estado_general`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `estado_general` (
-  `estado_general_id` int(11) NOT NULL,
+  `estado_general_id` int(11) NOT NULL AUTO_INCREMENT,
   `estado` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`estado_general_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='est';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='est';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -905,9 +924,9 @@ DROP TABLE IF EXISTS `estados_or`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `estados_or` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `estados_or_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`estados_or_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -928,7 +947,7 @@ DROP TABLE IF EXISTS `factura`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `factura` (
-  `factura_id` int(11) NOT NULL,
+  `factura_id` int(11) NOT NULL AUTO_INCREMENT,
   `venta_id` int(11) DEFAULT NULL,
   `detalle_venta_id` int(11) DEFAULT NULL,
   `comision_id` int(11) DEFAULT NULL,
@@ -943,10 +962,18 @@ CREATE TABLE `factura` (
   KEY `comision_id_idx` (`comision_id`),
   KEY `sucursal_id_idx` (`sucursal_id`),
   KEY `empleado_id_idx` (`empleado_id`),
+  KEY `fk_factura_venta_idx` (`venta_id`),
+  KEY `fk_factura_detalle_venta_idx` (`detalle_venta_id`),
+  KEY `fk_factura_reparacion_idx` (`reparacion_id`),
+  KEY `fk_factura_detalle_reparacion_idx` (`detalle_reparacion_id`),
   CONSTRAINT `fk_factura_comision` FOREIGN KEY (`comision_id`) REFERENCES `comision` (`comision_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_factura_detalle_reparacion` FOREIGN KEY (`detalle_reparacion_id`) REFERENCES `detalle_reparacion` (`detalle_reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_factura_detalle_venta` FOREIGN KEY (`detalle_venta_id`) REFERENCES `detalle_venta` (`detalle_venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_factura_empleado` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`empleados_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_factura_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_factura_sucursal` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`sucursales_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_factura_reparacion` FOREIGN KEY (`reparacion_id`) REFERENCES `reparacion` (`reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_factura_sucursal` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`sucursales_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_factura_venta` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -993,7 +1020,7 @@ DROP TABLE IF EXISTS `garantias`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `garantias` (
-  `garantias_id` int(11) NOT NULL,
+  `garantias_id` int(11) NOT NULL AUTO_INCREMENT,
   `venta_id` int(11) DEFAULT NULL,
   `observacion` varchar(255) DEFAULT NULL,
   `fecha_inicio` date DEFAULT NULL,
@@ -1004,7 +1031,11 @@ CREATE TABLE `garantias` (
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`garantias_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
-  CONSTRAINT `fk_garantias_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_garantias_venta_idx` (`venta_id`),
+  KEY `fk_garantias_reparacion_idx` (`reparacion_id`),
+  CONSTRAINT `fk_garantias_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_garantias_reparacion` FOREIGN KEY (`reparacion_id`) REFERENCES `reparacion` (`reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_garantias_venta` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1025,7 +1056,7 @@ DROP TABLE IF EXISTS `genero`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `genero` (
-  `genero_id` int(11) NOT NULL,
+  `genero_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`genero_id`),
@@ -1051,7 +1082,7 @@ DROP TABLE IF EXISTS `historial_envio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_envio` (
-  `historial_envio_id` int(11) NOT NULL,
+  `historial_envio_id` int(11) NOT NULL AUTO_INCREMENT,
   `envios_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`historial_envio_id`),
@@ -1079,7 +1110,7 @@ DROP TABLE IF EXISTS `historial_factura`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_factura` (
-  `historial_factura_id` int(11) NOT NULL,
+  `historial_factura_id` int(11) NOT NULL AUTO_INCREMENT,
   `factura_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`historial_factura_id`),
@@ -1107,7 +1138,7 @@ DROP TABLE IF EXISTS `historial_pedido_sucursal`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_pedido_sucursal` (
-  `historial_pedido_sucursal_id` int(11) NOT NULL,
+  `historial_pedido_sucursal_id` int(11) NOT NULL AUTO_INCREMENT,
   `pedido_sucursales_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`historial_pedido_sucursal_id`),
@@ -1135,7 +1166,7 @@ DROP TABLE IF EXISTS `historial_producto`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_producto` (
-  `historial_producto_id` int(11) NOT NULL,
+  `historial_producto_id` int(11) NOT NULL AUTO_INCREMENT,
   `producto_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`historial_producto_id`),
@@ -1163,12 +1194,14 @@ DROP TABLE IF EXISTS `historial_reparacion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_reparacion` (
-  `historial_reparacion_id` int(11) NOT NULL,
+  `historial_reparacion_id` int(11) NOT NULL AUTO_INCREMENT,
   `reparacion_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`historial_reparacion_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
-  CONSTRAINT `fk_historial_rep_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_historial_rep_reparacion_idx` (`reparacion_id`),
+  CONSTRAINT `fk_historial_rep_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_historial_rep_reparacion` FOREIGN KEY (`reparacion_id`) REFERENCES `reparacion` (`reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1189,7 +1222,7 @@ DROP TABLE IF EXISTS `historial_usuario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_usuario` (
-  `historial_usuario_id` int(11) NOT NULL,
+  `historial_usuario_id` int(11) NOT NULL AUTO_INCREMENT,
   `ventas_id` int(11) DEFAULT NULL,
   `cantidad_puntos` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -1218,12 +1251,14 @@ DROP TABLE IF EXISTS `historial_venta`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `historial_venta` (
-  `historial_venta_id` int(11) NOT NULL,
+  `historial_venta_id` int(11) NOT NULL AUTO_INCREMENT,
   `venta_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`historial_venta_id`),
   KEY `estado_general_id_idx` (`estado_general_id`,`venta_id`),
-  CONSTRAINT `fk_historial_v_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `FK_historial_venta_idx` (`venta_id`),
+  CONSTRAINT `fk_historial_v_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_historial_venta_venta` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1244,7 +1279,7 @@ DROP TABLE IF EXISTS `horarios_empleado`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `horarios_empleado` (
-  `horarios_empleado` int(11) NOT NULL,
+  `horarios_empleado` int(11) NOT NULL AUTO_INCREMENT,
   `horario` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`horarios_empleado`),
@@ -1270,7 +1305,7 @@ DROP TABLE IF EXISTS `horas_extra`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `horas_extra` (
-  `horas_extra_id` int(11) NOT NULL,
+  `horas_extra_id` int(11) NOT NULL AUTO_INCREMENT,
   `sueldo_por_hora` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`horas_extra_id`),
@@ -1296,7 +1331,7 @@ DROP TABLE IF EXISTS `interes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `interes` (
-  `interes_id` int(11) NOT NULL,
+  `interes_id` int(11) NOT NULL AUTO_INCREMENT,
   `cantidad` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`interes_id`),
@@ -1322,10 +1357,12 @@ DROP TABLE IF EXISTS `manzana`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `manzana` (
-  `manzana_id` int(11) NOT NULL,
+  `manzana_id` int(11) NOT NULL AUTO_INCREMENT,
   `numero` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`manzana_id`)
+  PRIMARY KEY (`manzana_id`),
+  KEY `fk_manzana_estado_general_idx` (`estado_general_id`),
+  CONSTRAINT `fk_manzana_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1346,7 +1383,7 @@ DROP TABLE IF EXISTS `marca`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `marca` (
-  `marca_id` int(11) NOT NULL,
+  `marca_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`marca_id`),
@@ -1372,7 +1409,7 @@ DROP TABLE IF EXISTS `marca_vehiculo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `marca_vehiculo` (
-  `marca_vehiculo_id` int(11) NOT NULL,
+  `marca_vehiculo_id` int(11) NOT NULL AUTO_INCREMENT,
   `marca_vehiculo` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`marca_vehiculo_id`),
@@ -1398,7 +1435,7 @@ DROP TABLE IF EXISTS `marcas_equipos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `marcas_equipos` (
-  `marca_equipo_id` int(11) NOT NULL,
+  `marca_equipo_id` int(11) NOT NULL AUTO_INCREMENT,
   `marcas_equipos` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`marca_equipo_id`),
@@ -1424,7 +1461,7 @@ DROP TABLE IF EXISTS `marcas_proveedor`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `marcas_proveedor` (
-  `marcas_proveedor_id` int(11) NOT NULL,
+  `marcas_proveedor_id` int(11) NOT NULL AUTO_INCREMENT,
   `marcas` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`marcas_proveedor_id`),
@@ -1450,7 +1487,7 @@ DROP TABLE IF EXISTS `matricula`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `matricula` (
-  `matricula_id` int(11) NOT NULL,
+  `matricula_id` int(11) NOT NULL AUTO_INCREMENT,
   `matricula` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`matricula_id`),
@@ -1476,7 +1513,7 @@ DROP TABLE IF EXISTS `modelo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `modelo` (
-  `modelo_id` int(11) NOT NULL,
+  `modelo_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`modelo_id`),
@@ -1502,7 +1539,7 @@ DROP TABLE IF EXISTS `modelo_equipos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `modelo_equipos` (
-  `modelo_equipo_id` int(11) NOT NULL,
+  `modelo_equipo_id` int(11) NOT NULL AUTO_INCREMENT,
   `modelo_equipos` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`modelo_equipo_id`),
@@ -1528,7 +1565,7 @@ DROP TABLE IF EXISTS `modelo_proveedor`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `modelo_proveedor` (
-  `modelos_proveedor_id` int(11) NOT NULL,
+  `modelos_proveedor_id` int(11) NOT NULL AUTO_INCREMENT,
   `modelo` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`modelos_proveedor_id`),
@@ -1554,7 +1591,7 @@ DROP TABLE IF EXISTS `modelo_vehiculo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `modelo_vehiculo` (
-  `modelo_vehiculo_id` int(11) NOT NULL,
+  `modelo_vehiculo_id` int(11) NOT NULL AUTO_INCREMENT,
   `modelo_vehiculo` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`modelo_vehiculo_id`),
@@ -1580,10 +1617,12 @@ DROP TABLE IF EXISTS `nro_calle`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `nro_calle` (
-  `nro_calle_id` int(11) NOT NULL,
+  `nro_calle_id` int(11) NOT NULL AUTO_INCREMENT,
   `numero` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`nro_calle_id`)
+  PRIMARY KEY (`nro_calle_id`),
+  KEY `fk_nro_calle_estado_general_idx` (`estado_general_id`),
+  CONSTRAINT `fk_nro_calle_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1604,7 +1643,7 @@ DROP TABLE IF EXISTS `nro_chasis`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `nro_chasis` (
-  `nro_chasis_id` int(11) NOT NULL,
+  `nro_chasis_id` int(11) NOT NULL AUTO_INCREMENT,
   `nro_chasis` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`nro_chasis_id`),
@@ -1656,7 +1695,7 @@ DROP TABLE IF EXISTS `pedidos_sucursales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pedidos_sucursales` (
-  `pedidos_sucursales_id` int(11) NOT NULL,
+  `pedidos_sucursales_id` int(11) NOT NULL AUTO_INCREMENT,
   `fecha_pedido` date DEFAULT NULL,
   `hora_pedido` datetime DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -1683,6 +1722,7 @@ DROP TABLE IF EXISTS `productos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `productos` (
+  `productos_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(100) NOT NULL,
   `descripcion` varchar(45) DEFAULT NULL,
   `categoria_productos_id` int(11) DEFAULT NULL,
@@ -1693,7 +1733,6 @@ CREATE TABLE `productos` (
   `estado_general_id` int(11) DEFAULT NULL,
   `fecha_ingreso` date DEFAULT NULL,
   `imagen` varchar(45) DEFAULT NULL,
-  `productos_id` int(11) NOT NULL,
   `garantia` tinyint(4) DEFAULT NULL,
   `observaciones` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`productos_id`),
@@ -1727,7 +1766,7 @@ DROP TABLE IF EXISTS `productos_sucursal`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `productos_sucursal` (
-  `productos_sucursal_id` int(11) NOT NULL,
+  `productos_sucursal_id` int(11) NOT NULL AUTO_INCREMENT,
   `productos_id` int(11) DEFAULT NULL,
   `sucursal_id` int(11) DEFAULT NULL,
   `stock_minimo` int(11) DEFAULT NULL,
@@ -1835,7 +1874,7 @@ DROP TABLE IF EXISTS `puntos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `puntos` (
-  `puntos_producto_id` int(11) NOT NULL,
+  `puntos_producto_id` int(11) NOT NULL AUTO_INCREMENT,
   `producto_id` int(11) DEFAULT NULL,
   `servicio_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -1866,7 +1905,7 @@ DROP TABLE IF EXISTS `puntos_usuario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `puntos_usuario` (
-  `puntos_usuario_id` int(11) NOT NULL,
+  `puntos_usuario_id` int(11) NOT NULL AUTO_INCREMENT,
   `cantidad` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`puntos_usuario_id`),
@@ -1892,7 +1931,7 @@ DROP TABLE IF EXISTS `regalos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `regalos` (
-  `regalos_id` int(11) NOT NULL,
+  `regalos_id` int(11) NOT NULL AUTO_INCREMENT,
   `regalos` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`regalos_id`),
@@ -1918,7 +1957,7 @@ DROP TABLE IF EXISTS `regalos_puntos_usuario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `regalos_puntos_usuario` (
-  `regalos_puntos_usuario_id` int(11) NOT NULL,
+  `regalos_puntos_usuario_id` int(11) NOT NULL AUTO_INCREMENT,
   `regalos_id` int(11) DEFAULT NULL,
   `clasificacion_usuario_id` int(11) DEFAULT NULL,
   `puntos_usuario` int(11) DEFAULT NULL,
@@ -1954,7 +1993,7 @@ CREATE TABLE `reparacion` (
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_entrega` date DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  `envio_id` tinyint(4) DEFAULT NULL,
+  `envios_id` tinyint(4) DEFAULT NULL,
   `empleado_id` int(11) DEFAULT NULL,
   `usuario_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`reparacion_id`),
@@ -1984,10 +2023,10 @@ DROP TABLE IF EXISTS `roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `roles` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `roles_id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(50) NOT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`roles_id`),
   KEY `fk_roles_estado_general_idx` (`estado_general_id`),
   CONSTRAINT `fk_roles_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -2042,7 +2081,7 @@ DROP TABLE IF EXISTS `sitios_web_proveedor`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sitios_web_proveedor` (
-  `sitios_web_proveedor_id` int(11) NOT NULL,
+  `sitios_web_proveedor_id` int(11) NOT NULL AUTO_INCREMENT,
   `sitios_web_proveedor` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`sitios_web_proveedor_id`),
@@ -2068,7 +2107,7 @@ DROP TABLE IF EXISTS `sueldo_basico`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sueldo_basico` (
-  `sueldo_basico_id` int(11) NOT NULL,
+  `sueldo_basico_id` int(11) NOT NULL AUTO_INCREMENT,
   `sueldo_basico` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`sueldo_basico_id`),
@@ -2094,7 +2133,7 @@ DROP TABLE IF EXISTS `sueldo_total`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sueldo_total` (
-  `sueldo_total_id` int(11) NOT NULL,
+  `sueldo_total_id` int(11) NOT NULL AUTO_INCREMENT,
   `sueldo_basico_id` int(11) DEFAULT NULL,
   `comision_id` int(11) DEFAULT NULL,
   `horas_extra_id` int(11) DEFAULT NULL,
@@ -2105,9 +2144,11 @@ CREATE TABLE `sueldo_total` (
   KEY `sueldo_basico_id_idx` (`sueldo_basico_id`),
   KEY `comision_id_idx` (`comision_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
+  KEY `fk_sueldo_total_horas_extra_idx` (`horas_extra_id`),
   CONSTRAINT `fk_sueldo_total_basico` FOREIGN KEY (`sueldo_basico_id`) REFERENCES `sueldo_basico` (`sueldo_basico_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_sueldo_total_comision` FOREIGN KEY (`comision_id`) REFERENCES `comision` (`comision_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_sueldo_total_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_sueldo_total_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_sueldo_total_horas_extra` FOREIGN KEY (`horas_extra_id`) REFERENCES `horas_extra` (`horas_extra_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2158,7 +2199,7 @@ DROP TABLE IF EXISTS `tipo_comprobante`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tipo_comprobante` (
-  `tipo_comprobante_id` int(11) NOT NULL,
+  `tipo_comprobante_id` int(11) NOT NULL AUTO_INCREMENT,
   `tipo_comprobante` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`tipo_comprobante_id`),
@@ -2184,7 +2225,7 @@ DROP TABLE IF EXISTS `tipo_envio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tipo_envio` (
-  `tipo_envio_id` int(11) NOT NULL,
+  `tipo_envio_id` int(11) NOT NULL AUTO_INCREMENT,
   `tipo` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`tipo_envio_id`),
@@ -2210,7 +2251,7 @@ DROP TABLE IF EXISTS `tipo_garantia`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tipo_garantia` (
-  `garantia_id` int(11) NOT NULL,
+  `garantia_id` int(11) NOT NULL AUTO_INCREMENT,
   `descipcion` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`garantia_id`),
@@ -2236,7 +2277,7 @@ DROP TABLE IF EXISTS `tipo_proveedor`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tipo_proveedor` (
-  `tipo_proveedor_id` int(11) NOT NULL,
+  `tipo_proveedor_id` int(11) NOT NULL AUTO_INCREMENT,
   `tipo` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`tipo_proveedor_id`),
@@ -2262,7 +2303,7 @@ DROP TABLE IF EXISTS `tipo_vehiculo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tipo_vehiculo` (
-  `tipo_vehiculo_id` int(11) NOT NULL,
+  `tipo_vehiculo_id` int(11) NOT NULL AUTO_INCREMENT,
   `tipo_vehiculo` varchar(45) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`tipo_vehiculo_id`),
@@ -2316,9 +2357,9 @@ CREATE TABLE `usuarios` (
   CONSTRAINT `fk_user_estado_gen` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_gen` FOREIGN KEY (`genero_id`) REFERENCES `genero` (`genero_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_puntos` FOREIGN KEY (`puntos_usuario_id`) REFERENCES `puntos_usuario` (`puntos_usuario_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_user_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_user_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`roles_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_tel` FOREIGN KEY (`telefono_id`) REFERENCES `telefonos` (`telefono_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2338,7 +2379,7 @@ DROP TABLE IF EXISTS `vehiculos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vehiculos` (
-  `vehiculos_id` int(11) NOT NULL,
+  `vehiculos_id` int(11) NOT NULL AUTO_INCREMENT,
   `marca_vehiculo_id` int(11) DEFAULT NULL,
   `modelo_vehiculo_id` int(11) DEFAULT NULL,
   `tipo_vehiculo_id` int(11) DEFAULT NULL,
@@ -2415,4 +2456,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-03 10:02:48
+-- Dump completed on 2026-08-06  3:13:02
