@@ -468,6 +468,36 @@ LOCK TABLES `comision_fija` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `compra_proveedor`
+--
+
+DROP TABLE IF EXISTS `compra_proveedor`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `compra_proveedor` (
+  `compra_proveedor_id` int(11) NOT NULL AUTO_INCREMENT,
+  `proveedor_id` int(11) DEFAULT NULL,
+  `fecha` datetime DEFAULT NULL,
+  `total` decimal(15,2) DEFAULT NULL,
+  `estado_general_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`compra_proveedor_id`),
+  KEY `fk_compra_prov_proveedor_idx` (`proveedor_id`),
+  KEY `fk_compra_prov_estado_idx` (`estado_general_id`),
+  CONSTRAINT `fk_compra_prov_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_compra_prov_proveedor` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`proveedor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `compra_proveedor`
+--
+
+LOCK TABLES `compra_proveedor` WRITE;
+/*!40000 ALTER TABLE `compra_proveedor` DISABLE KEYS */;
+/*!40000 ALTER TABLE `compra_proveedor` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `comprobantes`
 --
 
@@ -1033,8 +1063,12 @@ CREATE TABLE `garantias` (
   KEY `estado_general_id_idx` (`estado_general_id`),
   KEY `fk_garantias_venta_idx` (`venta_id`),
   KEY `fk_garantias_reparacion_idx` (`reparacion_id`),
+  KEY `fk_garantias_compra_prov_idx` (`compra_proveedor_id`),
+  KEY `fk_garantias_tipo_garantia_idx` (`tipo_garantia`),
+  CONSTRAINT `fk_garantias_compra_prov` FOREIGN KEY (`compra_proveedor_id`) REFERENCES `compra_proveedor` (`compra_proveedor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_garantias_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_garantias_reparacion` FOREIGN KEY (`reparacion_id`) REFERENCES `reparacion` (`reparacion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_garantias_tipo_garantia` FOREIGN KEY (`tipo_garantia`) REFERENCES `tipo_garantia` (`garantia_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_garantias_venta` FOREIGN KEY (`venta_id`) REFERENCES `venta` (`venta_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1993,14 +2027,16 @@ CREATE TABLE `reparacion` (
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_entrega` date DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
-  `envios_id` tinyint(4) DEFAULT NULL,
+  `envios_id` int(11) DEFAULT NULL,
   `empleado_id` int(11) DEFAULT NULL,
   `usuario_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`reparacion_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
   KEY `empleado_id_idx` (`empleado_id`),
   KEY `usuario_id_idx` (`usuario_id`),
+  KEY `fk_reparacion_envios_idx` (`envios_id`),
   CONSTRAINT `fk_reparacion_empleado` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`empleados_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_reparacion_envios` FOREIGN KEY (`envios_id`) REFERENCES `envios` (`envios_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_reparacion_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`),
   CONSTRAINT `fk_reparacion_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`usuario_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -2097,6 +2133,38 @@ CREATE TABLE `sitios_web_proveedor` (
 LOCK TABLES `sitios_web_proveedor` WRITE;
 /*!40000 ALTER TABLE `sitios_web_proveedor` DISABLE KEYS */;
 /*!40000 ALTER TABLE `sitios_web_proveedor` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `sucursales`
+--
+
+DROP TABLE IF EXISTS `sucursales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `sucursales` (
+  `sucursales_id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) NOT NULL,
+  `direccion_id` int(11) DEFAULT NULL,
+  `telefono_id` int(11) DEFAULT NULL,
+  `estado_general_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`sucursales_id`),
+  KEY `fk_suc_direccion_idx` (`direccion_id`),
+  KEY `fk_suc_telefono_idx` (`telefono_id`),
+  KEY `fk_suc_estado_idx` (`estado_general_id`),
+  CONSTRAINT `fk_suc_direccion` FOREIGN KEY (`direccion_id`) REFERENCES `direccion` (`direccion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_suc_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_suc_telefono` FOREIGN KEY (`telefono_id`) REFERENCES `telefonos` (`telefono_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sucursales`
+--
+
+LOCK TABLES `sucursales` WRITE;
+/*!40000 ALTER TABLE `sucursales` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sucursales` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -2424,7 +2492,7 @@ CREATE TABLE `venta` (
   `venta_id` int(11) NOT NULL,
   `fecha_venta` timestamp NOT NULL DEFAULT current_timestamp(),
   `total` decimal(15,2) DEFAULT NULL,
-  `envio_id` tinyint(4) DEFAULT NULL,
+  `envio_id` int(11) DEFAULT NULL,
   `empleado_id` int(11) DEFAULT NULL,
   `usuario_id` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -2432,7 +2500,9 @@ CREATE TABLE `venta` (
   KEY `estado_general_id_idx` (`estado_general_id`),
   KEY `empleado_id_idx` (`empleado_id`),
   KEY `usuario_id_idx` (`usuario_id`),
+  KEY `fk_venta_envios_idx` (`envio_id`),
   CONSTRAINT `fk_venta_empleado` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`empleados_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_venta_envios` FOREIGN KEY (`envio_id`) REFERENCES `envios` (`envios_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_venta_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_venta_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`usuario_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -2456,4 +2526,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-06  3:13:02
+-- Dump completed on 2026-08-06  3:39:05
