@@ -341,7 +341,7 @@ CREATE TABLE `codigo_area` (
   PRIMARY KEY (`codigo_area_id`),
   KEY `fk_carea_estado_general_idx` (`estado_general_id`),
   CONSTRAINT `fk_carea_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -350,6 +350,7 @@ CREATE TABLE `codigo_area` (
 
 LOCK TABLES `codigo_area` WRITE;
 /*!40000 ALTER TABLE `codigo_area` DISABLE KEYS */;
+INSERT INTO `codigo_area` VALUES (1,370,1);
 /*!40000 ALTER TABLE `codigo_area` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -708,41 +709,19 @@ DROP TABLE IF EXISTS `direccion`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `direccion` (
   `direccion_id` int(11) NOT NULL AUTO_INCREMENT,
-  `pais_id` int(11) DEFAULT NULL,
-  `estado_id` int(11) DEFAULT NULL,
-  `ciudad_id` int(11) DEFAULT NULL,
+  `provincia_id` int(11) NOT NULL,
+  `ciudad_id` int(11) NOT NULL,
   `codigo_postal_id` int(11) DEFAULT NULL,
-  `calle_id` int(11) DEFAULT NULL,
-  `nro_calle_id` int(11) DEFAULT NULL,
-  `barrio_id` int(11) DEFAULT NULL,
-  `manzana_id` int(11) DEFAULT NULL,
-  `casa_id` int(11) DEFAULT NULL,
-  `provincia_id` int(11) DEFAULT NULL,
-  `estado_general_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`direccion_id`),
-  KEY `pais_id_idx` (`pais_id`),
-  KEY `estado_id_idx` (`estado_id`),
-  KEY `ciudad_id_idx` (`ciudad_id`),
-  KEY `codigo_postal_id_idx` (`codigo_postal_id`),
-  KEY `calle_id_idx` (`calle_id`),
-  KEY `nro_calle_id_idx` (`nro_calle_id`),
-  KEY `barrio_id_idx` (`barrio_id`),
-  KEY `manazana_id_idx` (`manzana_id`),
-  KEY `casa_id_idx` (`casa_id`),
-  KEY `provincia_id_idx` (`provincia_id`),
-  KEY `estado_general_id_idx` (`estado_general_id`),
-  CONSTRAINT `fk_dir_barrio` FOREIGN KEY (`barrio_id`) REFERENCES `barrios` (`barrios_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_calle` FOREIGN KEY (`calle_id`) REFERENCES `calle` (`calle_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_casa` FOREIGN KEY (`casa_id`) REFERENCES `casa` (`casa_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_ciudad` FOREIGN KEY (`ciudad_id`) REFERENCES `ciudades` (`ciudad_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_cp` FOREIGN KEY (`codigo_postal_id`) REFERENCES `codigo_postal` (`codigo_postal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_estado` FOREIGN KEY (`estado_id`) REFERENCES `estado` (`estado_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_estado_gen` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_manzana` FOREIGN KEY (`manzana_id`) REFERENCES `manzana` (`manzana_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_nro_calle` FOREIGN KEY (`nro_calle_id`) REFERENCES `nro_calle` (`nro_calle_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_pais` FOREIGN KEY (`pais_id`) REFERENCES `paises` (`pais_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dir_provincia` FOREIGN KEY (`provincia_id`) REFERENCES `provincias` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `calle` varchar(100) NOT NULL,
+  `numero` varchar(10) DEFAULT NULL,
+  `barrio` varchar(100) DEFAULT NULL,
+  `manzana` varchar(10) DEFAULT NULL,
+  `casa` varchar(10) DEFAULT NULL,
+  `piso_dpto` varchar(20) DEFAULT NULL,
+  `observaciones` varchar(255) DEFAULT NULL,
+  `estado_general_id` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`direccion_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -934,7 +913,7 @@ CREATE TABLE `estado_general` (
   `estado_general_id` int(11) NOT NULL AUTO_INCREMENT,
   `estado` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`estado_general_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='est';
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='est';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -943,6 +922,7 @@ CREATE TABLE `estado_general` (
 
 LOCK TABLES `estado_general` WRITE;
 /*!40000 ALTER TABLE `estado_general` DISABLE KEYS */;
+INSERT INTO `estado_general` VALUES (1,'activo'),(2,'inhabilitado');
 /*!40000 ALTER TABLE `estado_general` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1096,7 +1076,7 @@ CREATE TABLE `genero` (
   PRIMARY KEY (`genero_id`),
   KEY `fk_genero_estado_general_idx` (`estado_general_id`),
   CONSTRAINT `fk_genero_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1105,6 +1085,7 @@ CREATE TABLE `genero` (
 
 LOCK TABLES `genero` WRITE;
 /*!40000 ALTER TABLE `genero` DISABLE KEYS */;
+INSERT INTO `genero` VALUES (1,'masculino',1),(2,'femenino',1);
 /*!40000 ALTER TABLE `genero` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1709,7 +1690,7 @@ CREATE TABLE `paises` (
   PRIMARY KEY (`pais_id`),
   KEY `fk_paises_estado_general_idx` (`estado_general_id`),
   CONSTRAINT `fk_paises_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1888,7 +1869,7 @@ CREATE TABLE `provincias` (
   PRIMARY KEY (`id`),
   KEY `fk_provincias_estado_general_idx` (`estado_general_id`),
   CONSTRAINT `fk_provincias_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1940,11 +1921,14 @@ DROP TABLE IF EXISTS `puntos_usuario`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `puntos_usuario` (
   `puntos_usuario_id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) DEFAULT NULL,
   `cantidad` int(11) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`puntos_usuario_id`),
   KEY `fk_puntos_estado_general_idx` (`estado_general_id`),
-  CONSTRAINT `fk_puntos_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_puntos_usuario_id_idx` (`usuario_id`),
+  CONSTRAINT `fk_puntos_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_puntos_usuario_id` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`usuario_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2065,7 +2049,7 @@ CREATE TABLE `roles` (
   PRIMARY KEY (`roles_id`),
   KEY `fk_roles_estado_general_idx` (`estado_general_id`),
   CONSTRAINT `fk_roles_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2074,6 +2058,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,'administrador',1),(2,'recepcionista',1),(3,'tecnico',1),(4,'cliente',1);
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2155,7 +2140,7 @@ CREATE TABLE `sucursales` (
   CONSTRAINT `fk_suc_direccion` FOREIGN KEY (`direccion_id`) REFERENCES `direccion` (`direccion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_suc_estado` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_suc_telefono` FOREIGN KEY (`telefono_id`) REFERENCES `telefonos` (`telefono_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2164,6 +2149,7 @@ CREATE TABLE `sucursales` (
 
 LOCK TABLES `sucursales` WRITE;
 /*!40000 ALTER TABLE `sucursales` DISABLE KEYS */;
+INSERT INTO `sucursales` VALUES (1,'Sucursal Central',1,NULL,1),(2,'Sucursal Norte',2,NULL,1);
 /*!40000 ALTER TABLE `sucursales` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2238,6 +2224,7 @@ DROP TABLE IF EXISTS `telefonos`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `telefonos` (
   `telefono_id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) NOT NULL,
   `numero` varchar(20) NOT NULL,
   `tipo` varchar(20) DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
@@ -2245,9 +2232,11 @@ CREATE TABLE `telefonos` (
   PRIMARY KEY (`telefono_id`),
   KEY `fk_tel_estado_general_idx` (`estado_general_id`),
   KEY `fk_tel_codigo_area_idx` (`codigo_area_id`),
+  KEY `fk_telefonos_usuario` (`usuario_id`),
   CONSTRAINT `fk_tel_codigo_area` FOREIGN KEY (`codigo_area_id`) REFERENCES `codigo_area` (`codigo_area_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_tel_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  CONSTRAINT `fk_tel_estado_general` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_telefonos_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`usuario_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2406,28 +2395,22 @@ CREATE TABLE `usuarios` (
   `apellido` varchar(45) DEFAULT NULL,
   `dni_cuit` int(11) DEFAULT NULL,
   `direccion_id` int(11) DEFAULT NULL,
-  `telefono_id` int(11) DEFAULT NULL,
   `rol_id` int(11) DEFAULT NULL,
   `genero_id` int(11) DEFAULT NULL,
-  `puntos_usuario_id` int(11) DEFAULT NULL,
   `fecha_nacimiento` date DEFAULT NULL,
   `estado_general_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`usuario_id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`),
-  KEY `direccion_id_idx` (`direccion_id`),
-  KEY `telefono_id_idx` (`telefono_id`),
   KEY `rol_id_idx` (`rol_id`),
   KEY `genero_id_idx` (`genero_id`),
   KEY `estado_general_id_idx` (`estado_general_id`),
-  KEY `fk_user_puntos` (`puntos_usuario_id`),
-  CONSTRAINT `fk_user_dir` FOREIGN KEY (`direccion_id`) REFERENCES `direccion` (`direccion_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY `fk_usuarios_direccion` (`direccion_id`),
   CONSTRAINT `fk_user_estado_gen` FOREIGN KEY (`estado_general_id`) REFERENCES `estado_general` (`estado_general_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_gen` FOREIGN KEY (`genero_id`) REFERENCES `genero` (`genero_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_user_puntos` FOREIGN KEY (`puntos_usuario_id`) REFERENCES `puntos_usuario` (`puntos_usuario_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`roles_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_user_tel` FOREIGN KEY (`telefono_id`) REFERENCES `telefonos` (`telefono_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  CONSTRAINT `fk_usuarios_direccion` FOREIGN KEY (`direccion_id`) REFERENCES `direccion` (`direccion_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2436,6 +2419,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
+INSERT INTO `usuarios` VALUES (3,'Sebastiangmez08','$2y$10$neVMExW5yWppo5emfTs9cO7oEvUClkJy/RyYpvw5l8SAjB2tTKs7.','sebastiangmez08@gmail.com','2026-08-10 12:07:00','Sebastian','Gomez',47715113,NULL,1,1,NULL,1),(4,'materiagris','$2y$10$6xNsa/Ot9RdglEWclOu3Q.h0Frb3I7Fwv2nhCVLcouaDRM5me2dpm','velazquemanuel@','2026-08-10 12:15:42','Emanuel','Velazque',48059789,NULL,4,2,NULL,1);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2526,4 +2510,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-06  3:39:05
+-- Dump completed on 2026-08-11 10:28:04
