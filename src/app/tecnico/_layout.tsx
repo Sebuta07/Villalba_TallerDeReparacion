@@ -20,11 +20,10 @@ export default function TecnicoLayout() {
 
   const opcionesMenu = [
     { label: 'Panel Principal', route: '/tecnico' },
-    { label: 'Listado de Reparaciones', route: '/tecnico/listado_reparaciones' },
-    { label: 'Listado de Ordenes', route: '/tecnico/tomar_orden' },
-    { label: 'Chat con el Cliente', route: '/tecnico/notas' },
-    { label: 'Carga de Presupuesto', route: '/tecnico/presupuesto' },
-    { label: 'Formulario de Diagnóstico', route: '/tecnico/diagnostico' },
+    { label: 'Mis Reparaciones', route: '/tecnico/listado_reparaciones' },
+    { label: 'Ordenes de Reparación', route: '/tecnico/tomar_orden' },
+    { label: 'Chat con Cliente', route: '/tecnico/notas' },
+    { label: 'Evaluar Orden', route: '/tecnico/evaluar_orden' },
   ];
 
   const navegarA = (ruta: string) => {

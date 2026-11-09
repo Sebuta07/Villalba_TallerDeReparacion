@@ -1,10 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as ImagePicker from 'expo-image-picker';
 import { useGlobalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Dimensions,
   FlatList,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -15,10 +21,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const API_NOTAS = `${process.env.EXPO_PUBLIC_API_URL}/tecnico/notas.php`;
+const { width } = Dimensions.get('window');
 
 export default function NotasScreen() {
   const params = useGlobalSearchParams();
-  // Capturamos el ID del técnico logueado (por defecto 9 si no viene en la ruta)
   const tecnicoId = params.usuarioId ? Number(params.usuarioId) : 9;
 
   const [ordenes, setOrdenes] = useState<any[]>([]);
@@ -26,6 +32,11 @@ export default function NotasScreen() {
   const [notas, setNotas] = useState<any[]>([]);
   const [mensaje, setMensaje] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  const [imagenModalUrl, setImagenModalUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     cargarOrdenesTecnico();
@@ -48,7 +59,7 @@ export default function NotasScreen() {
         setOrdenes(json.ordenes);
       }
     } catch (e) {
-      console.log('Error al cargar órdenes del técnico', e);
+      console.log('Error al cargar órdenes', e);
     } finally {
       setLoading(false);
     }
@@ -65,30 +76,101 @@ export default function NotasScreen() {
     }
   };
 
-  const enviarMensaje = async () => {
-    if (!mensaje.trim() || !ordenSeleccionada) return;
+  const enviarDatos = async (assetArchivo: any = null, tipoForzado = 'texto') => {
+    if (!ordenSeleccionada) return;
+    if (!mensaje.trim() && !assetArchivo) return;
 
     try {
-      const res = await fetch(API_NOTAS, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reparacion_orden_id: ordenSeleccionada.reparacion_orden_id,
-          remitente: 'tecnico',
-          mensaje
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setMensaje('');
-        obtenerNotas();
+      const parametros = {
+        reparacion_orden_id: String(ordenSeleccionada.reparacion_orden_id),
+        remitente: 'tecnico',
+        mensaje: mensaje.trim() || (assetArchivo ? 'Archivo adjunto' : ''),
+        tipo: assetArchivo ? tipoForzado : 'texto',
+      };
+
+      if (assetArchivo) {
+        setUploadProgress(0);
+        const uploadTask = FileSystem.createUploadTask(
+          API_NOTAS,
+          assetArchivo.uri,
+          {
+            fieldName: 'archivo',
+            httpMethod: 'POST',
+            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            parameters: parametros,
+          },
+          (data) => {
+            const progreso = data.totalBytesSent / data.totalBytesExpectedToSend;
+            setUploadProgress(Number(progreso.toFixed(2)));
+          }
+        );
+
+        const uploadResult = await uploadTask.uploadAsync();
+        setUploadProgress(null);
+
+        if (!uploadResult) {
+          Alert.alert('Error', 'No se pudo completar la subida del archivo.');
+          return;
+        }
+
+        let json;
+        try {
+          json = JSON.parse(uploadResult.body);
+        } catch (err) {
+          Alert.alert('Error del Servidor', 'Respuesta no válida del servidor.');
+          return;
+        }
+
+        if (json.success) {
+          setMensaje('');
+          obtenerNotas();
+        } else {
+          Alert.alert('Error', json.message || 'El servidor rechazó el archivo.');
+        }
+      } else {
+        setLoading(true);
+        const res = await fetch(API_NOTAS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parametros),
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          setMensaje('');
+          obtenerNotas();
+        } else {
+          Alert.alert('Error', json.message || 'No se pudo enviar el mensaje.');
+        }
       }
-    } catch (e) {
-      console.log('Error al enviar nota');
+    } catch (e: any) {
+      setUploadProgress(null);
+      Alert.alert('Error Técnico', String(e?.message || e));
+    } finally {
+      setLoading(false);
     }
   };
 
-  // VISTA 1: BANDEJA DE CHATS ESTILO WHATSAPP
+  const seleccionarMultimedia = async () => {
+    const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permiso.granted) {
+      Alert.alert('Permiso denegado', 'Se necesita acceso a la galería.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (!resultado.canceled && resultado.assets && resultado.assets.length > 0) {
+      const asset = resultado.assets[0];
+      const tipo = asset.type === 'video' ? 'video' : 'imagen';
+      enviarDatos(asset, tipo);
+    }
+  };
+
   if (!ordenSeleccionada) {
     return (
       <SafeAreaView style={styles.container}>
@@ -159,14 +241,16 @@ export default function NotasScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <FlatList
+          ref={flatListRef}
           data={notas}
           keyExtractor={(item, index) => (item.nota_id ? item.nota_id.toString() : index.toString())}
           contentContainerStyle={styles.chatMessageList}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => {
             const esTecnico = item.remitente === 'tecnico';
             return (
@@ -174,9 +258,26 @@ export default function NotasScreen() {
                 <Text style={[styles.waRemitente, { color: esTecnico ? '#93C5FD' : '#64748B' }]}>
                   {esTecnico ? 'Técnico (Tú)' : 'Cliente'}
                 </Text>
-                <Text style={[styles.waMessageText, { color: esTecnico ? '#FFF' : '#0F172A' }]}>
-                  {item.mensaje}
-                </Text>
+
+                {item.tipo === 'imagen' && item.archivo_url && (
+                  <TouchableOpacity onPress={() => setImagenModalUrl(item.archivo_url)}>
+                    <Image source={{ uri: item.archivo_url }} style={styles.chatImageMessage} resizeMode="cover" />
+                  </TouchableOpacity>
+                )}
+
+                {item.tipo === 'video' && (
+                  <View style={styles.videoContainerBubble}>
+                    <Ionicons name="videocam" size={28} color="#FFF" />
+                    <Text style={{ color: '#FFF', fontSize: 11, marginTop: 4 }}>Video adjunto en el chat</Text>
+                  </View>
+                )}
+
+                {item.mensaje ? (
+                  <Text style={[styles.waMessageText, { color: esTecnico ? '#FFF' : '#0F172A' }]}>
+                    {item.mensaje}
+                  </Text>
+                ) : null}
+
                 <Text style={[styles.waTimestamp, { color: esTecnico ? 'rgba(255,255,255,0.7)' : '#94A3B8' }]}>
                   {item.fecha}
                 </Text>
@@ -185,7 +286,20 @@ export default function NotasScreen() {
           }}
         />
 
+        {uploadProgress !== null && (
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>Enviando archivo... {Math.round(uploadProgress * 100)}%</Text>
+            <View style={styles.progressBarBackground}>
+              <View style={[styles.progressBarFill, { width: `${uploadProgress * 100}%` }]} />
+            </View>
+          </View>
+        )}
+
         <View style={styles.waInputBar}>
+          <TouchableOpacity style={styles.attachButton} onPress={seleccionarMultimedia}>
+            <Ionicons name="add" size={24} color="#8696A0" />
+          </TouchableOpacity>
+
           <TextInput
             style={styles.waTextInput}
             placeholder="Escribe un mensaje..."
@@ -194,11 +308,23 @@ export default function NotasScreen() {
             onChangeText={setMensaje}
             multiline
           />
-          <TouchableOpacity style={styles.waSendButton} onPress={enviarMensaje}>
+
+          <TouchableOpacity style={styles.waSendButton} onPress={() => enviarDatos(null)}>
             <Ionicons name="send" size={18} color="#FFF" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal visible={!!imagenModalUrl} transparent={true} onRequestClose={() => setImagenModalUrl(null)}>
+        <View style={styles.modalBackground}>
+          <TouchableOpacity style={styles.modalCloseButton} onPress={() => setImagenModalUrl(null)}>
+            <Text style={styles.modalCloseText}>✕ Cerrar</Text>
+          </TouchableOpacity>
+          {imagenModalUrl && (
+            <Image source={{ uri: imagenModalUrl }} style={styles.fullImage} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -268,8 +394,16 @@ const styles = StyleSheet.create({
   waBubbleOut: { backgroundColor: '#005C4B', alignSelf: 'flex-end', borderTopRightRadius: 0 },
   waBubbleIn: { backgroundColor: '#202C33', alignSelf: 'flex-start', borderTopLeftRadius: 0 },
   waRemitente: { fontSize: 10, fontWeight: 'bold', marginBottom: 2, textTransform: 'uppercase' },
-  waMessageText: { fontSize: 14, lineHeight: 19 },
+  waMessageText: { fontSize: 14, lineHeight: 19, marginTop: 4 },
   waTimestamp: { fontSize: 9, alignSelf: 'flex-end', marginTop: 4 },
+  
+  chatImageMessage: { width: 220, height: 160, borderRadius: 6, marginTop: 4, backgroundColor: '#111' },
+  videoContainerBubble: { width: 200, height: 100, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
+
+  progressContainer: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#1F2C34' },
+  progressText: { color: '#FFF', fontSize: 11, marginBottom: 4 },
+  progressBarBackground: { width: '100%', height: 4, backgroundColor: '#334155', borderRadius: 2 },
+  progressBarFill: { height: '100%', backgroundColor: '#00A884', borderRadius: 2 },
 
   waInputBar: {
     flexDirection: 'row',
@@ -277,6 +411,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#202C33',
     paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  attachButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 38,
+    height: 38,
+    marginRight: 6,
   },
   waTextInput: {
     flex: 1,
@@ -296,5 +437,10 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     marginLeft: 8,
-  }
+  },
+
+  modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  fullImage: { width: width * 0.95, height: width * 0.95 },
+  modalCloseButton: { position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 },
+  modalCloseText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }
 });

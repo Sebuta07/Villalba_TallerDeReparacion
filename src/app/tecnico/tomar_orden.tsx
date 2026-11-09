@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -10,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -23,6 +25,11 @@ export default function TomarOrdenScreen() {
 
   const [loading, setLoading] = useState(true);
   const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [ordenesFiltradas, setOrdenesFiltradas] = useState<any[]>([]);
+  
+  // Estado para el buscador y filtros
+  const [busqueda, setBusqueda] = useState('');
+  
   const [procesandoId, setProcesandoId] = useState<number | null>(null);
   const [ordenExpandidaId, setOrdenExpandidaId] = useState<number | null>(null);
   
@@ -34,7 +41,8 @@ export default function TomarOrdenScreen() {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/tecnico/tomar_orden.php?empleado_id=${empleadoId}`);
       const json = await response.json();
       if (json.success) {
-        setOrdenes(json.data);
+        setOrdenes(json.data || json.ordenes || []);
+        setOrdenesFiltradas(json.data || json.ordenes || []);
       } else {
         Alert.alert('Error', json.message || 'No se pudieron cargar las órdenes.');
       }
@@ -49,6 +57,33 @@ export default function TomarOrdenScreen() {
   useEffect(() => {
     fetchOrdenesDisponibles();
   }, []);
+
+  // Función de filtrado dinámico (por servicio, cliente, DNI, marca, modelo o ID de orden)
+  useEffect(() => {
+    if (!busqueda.trim()) {
+      setOrdenesFiltradas(ordenes);
+    } else {
+      const texto = busqueda.toLowerCase();
+      const resultado = ordenes.filter((item) => {
+        const cliente = `${item.cliente_nombre || ''} ${item.cliente_apellido || ''}`.toLowerCase();
+        const servicio = (item.servicio_nombre || '').toLowerCase();
+        const marcaModelo = `${item.marca_nombre || ''} ${item.modelo_nombre || ''}`.toLowerCase();
+        const idOrden = String(item.id || item.reparacion_orden_id || '');
+        const dni = String(item.dni_cuit || item.dni || '');
+        const fecha = (item.fecha_registro || '').toLowerCase();
+
+        return (
+          cliente.includes(texto) ||
+          servicio.includes(texto) ||
+          marcaModelo.includes(texto) ||
+          idOrden.includes(texto) ||
+          dni.includes(texto) ||
+          fecha.includes(texto)
+        );
+      });
+      setOrdenesFiltradas(resultado);
+    }
+  }, [busqueda, ordenes]);
 
   const confirmarTomarOrden = (reparacionOrdenId: number) => {
     Alert.alert(
@@ -94,23 +129,23 @@ export default function TomarOrdenScreen() {
   };
 
   const renderItem = ({ item }: { item: any }) => {
-    const estaExpandida = ordenExpandidaId === item.id;
+    const ordenId = item.id || item.reparacion_orden_id;
+    const estaExpandida = ordenExpandidaId === ordenId;
 
     return (
       <View style={styles.card}>
-        {/* Cabecera interactiva: solo esto abre o cierra la tarjeta */}
-        <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpandir(item.id)}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpandir(ordenId)}>
           <View style={styles.cardHeader}>
             <Text style={styles.equipo}>
-              {item.categoria_nombre || 'Celular'} — {item.marca_nombre || 'Samsung'} {item.modelo_nombre || 'Galaxy A 11'}
+              {item.categoria_nombre || 'Dispositivo'} — {item.marca_nombre || ''} {item.modelo_nombre || ''}
             </Text>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.estado_orden || 'pendiente'}</Text>
+              <Text style={styles.badgeText}>{item.estado_orden || item.estado_nombre || 'pendiente'}</Text>
             </View>
           </View>
           
           <Text style={styles.subEquipo}>
-            {item.numero_serie ? `Serie: ${item.numero_serie}` : 'Sin serie'} {item.imei ? `| IMEI: ${item.imei}` : ''}
+            Orden #{ordenId} {item.numero_serie ? `| Serie: ${item.numero_serie}` : ''}
           </Text>
         </TouchableOpacity>
 
@@ -118,16 +153,18 @@ export default function TomarOrdenScreen() {
           <View style={styles.detailsContainer}>
             <View style={styles.divider} />
 
-            <Text style={styles.infoText}><Text style={styles.boldText}>Cliente:</Text> {item.cliente_nombre || 'No asignado'}</Text>
+            <Text style={styles.infoText}><Text style={styles.boldText}>Cliente:</Text> {item.cliente_nombre || 'No asignado'} {item.cliente_apellido || ''}</Text>
+            {item.dni_cuit && <Text style={styles.infoText}><Text style={styles.boldText}>DNI/CUIT:</Text> {item.dni_cuit}</Text>}
             <Text style={styles.infoText}><Text style={styles.boldText}>Servicio:</Text> {item.servicio_nombre || 'No especificado'}</Text>
+            <Text style={styles.infoText}><Text style={styles.boldText}>Fecha:</Text> {item.fecha_registro || 'No especificada'}</Text>
 
             <Text style={styles.diagnostico}>
               <Text style={styles.boldText}>Diagnóstico:</Text> {item.diagnostico_cliente || 'Sin observaciones'}
             </Text>
 
             <View style={styles.footerCard}>
-              <Text style={styles.total}>Total: ${item.total || 0}</Text>
-              <Text style={styles.pago}>Método de Pago: {item.forma_pago || 'No especificada'}</Text>
+              <Text style={styles.total}>Total: ${item.total || item.presupuesto || 0}</Text>
+              <Text style={styles.pago}>Pago: {item.forma_pago || 'No especificada'}</Text>
             </View>
 
             {item.imagenes && item.imagenes.length > 0 && (
@@ -145,10 +182,10 @@ export default function TomarOrdenScreen() {
 
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => confirmarTomarOrden(item.id)}
-              disabled={procesandoId === item.id}
+              onPress={() => confirmarTomarOrden(ordenId)}
+              disabled={procesandoId === ordenId}
             >
-              {procesandoId === item.id ? (
+              {procesandoId === ordenId ? (
                 <ActivityIndicator color="#ffffff" size="small" />
               ) : (
                 <Text style={styles.actionButtonText}>Tomar Orden</Text>
@@ -171,16 +208,34 @@ export default function TomarOrdenScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Órdenes Disponibles</Text>
-      <Text style={styles.subtitle}>Toca el título del equipo para desplegar u ocultar detalles</Text>
+      <Text style={styles.subtitle}>Filtra por cliente, servicio, DNI, fecha o número de orden</Text>
 
-      {ordenes.length === 0 ? (
+      {/* BARRA DE BÚSQUEDA Y FILTRADO */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={18} color="#64748B" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por servicio, DNI, cliente, fecha..."
+          placeholderTextColor="#94A3B8"
+          value={busqueda}
+          onChangeText={setBusqueda}
+        />
+        {busqueda.length > 0 && (
+          <TouchableOpacity onPress={() => setBusqueda('')}>
+            <Ionicons name="close-circle" size={18} color="#64748B" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {ordenesFiltradas.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No hay órdenes pendientes en este momento.</Text>
+          <Ionicons name="search-outline" size={48} color="#94A3B8" style={{ marginBottom: 10 }} />
+          <Text style={styles.emptyText}>No se encontraron órdenes con los criterios de búsqueda.</Text>
         </View>
       ) : (
         <FlatList
-          data={ordenes}
-          keyExtractor={(item) => item.id.toString()}
+          data={ordenesFiltradas}
+          keyExtractor={(item) => (item.id || item.reparacion_orden_id).toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
@@ -206,7 +261,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F6FA', padding: 20 },
   loaderContainer: { flex: 1, backgroundColor: '#F4F6FA', justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', marginBottom: 2 },
-  subtitle: { fontSize: 13, color: '#64748B', marginBottom: 20 },
+  subtitle: { fontSize: 13, color: '#64748B', marginBottom: 14 },
+  
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: '#0F172A', padding: 0 },
+
   listContainer: { paddingBottom: 20 },
   card: {
     backgroundColor: '#FFFFFF',
@@ -268,7 +342,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   actionButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, marginTop: 40 },
   emptyText: { color: '#64748B', textAlign: 'center', fontSize: 14 },
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   fullImage: { width: width * 0.95, height: width * 0.95 },

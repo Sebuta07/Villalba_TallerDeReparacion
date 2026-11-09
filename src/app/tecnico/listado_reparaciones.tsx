@@ -3,12 +3,18 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
+  Image,
+  Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function ListadoReparacionesScreen() {
   const router = useRouter();
@@ -16,9 +22,15 @@ export default function ListadoReparacionesScreen() {
   const empleadoId = params.empleadoId ? Number(params.empleadoId) : 9;
 
   const [reparaciones, setReparaciones] = useState<any[]>([]);
+  const [reparacionesFiltradas, setReparacionesFiltradas] = useState<any[]>([]);
+  const [filtroActivo, setFiltroActivo] = useState<string>('todos'); // 'todos', '1', '2', '3', '4'
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cardExpandida, setCardExpandida] = useState<number | null>(null);
+
+  // Estado para la imagen ampliada en pantalla completa
+  const [imagenModalUrl, setImagenModalUrl] = useState<string | null>(null);
 
   const obtenerReparaciones = async () => {
     try {
@@ -28,7 +40,9 @@ export default function ListadoReparacionesScreen() {
       const json = await response.json();
 
       if (json.success) {
-        setReparaciones(json.data);
+        const lista = json.data || json.ordenes || [];
+        setReparaciones(lista);
+        aplicarFiltro(filtroActivo, lista);
       } else {
         setError(json.message || 'No se pudieron cargar las reparaciones.');
       }
@@ -43,6 +57,38 @@ export default function ListadoReparacionesScreen() {
   useEffect(() => {
     obtenerReparaciones();
   }, [empleadoId]);
+
+  const aplicarFiltro = (estadoId: string, listaBase = reparaciones) => {
+    setFiltroActivo(estadoId);
+    const baseSegura = listaBase || [];
+    if (estadoId === 'todos') {
+      setReparacionesFiltradas(baseSegura);
+    } else {
+      const filtradas = baseSegura.filter((item) => String(item.estados_or_id) === estadoId);
+      setReparacionesFiltradas(filtradas);
+    }
+  };
+
+  const confirmarCambioEstado = (reparacionOrdenId: number, nuevoEstadoId: number, nombreEstado: string) => {
+    let mensajeExtra = `¿Estás seguro de cambiar el estado de la orden #${reparacionOrdenId} a "${nombreEstado}"?`;
+    
+    if (nuevoEstadoId === 4) {
+      mensajeExtra = `⚠️ ATENCIÓN (Cancelación):\n¿Estás seguro de cancelar la orden #${reparacionOrdenId}? Esto liberará cualquier componente reservado y cerrará el proceso en taller.`;
+    }
+
+    Alert.alert(
+      'Confirmar Cambio de Estado',
+      mensajeExtra,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sí, cambiar', 
+          style: nuevoEstadoId === 4 ? 'destructive' : 'default',
+          onPress: () => handleCambiarEstado(reparacionOrdenId, nuevoEstadoId) 
+        }
+      ]
+    );
+  };
 
   const handleCambiarEstado = async (reparacionOrdenId: number, nuevoEstadoId: number) => {
     try {
@@ -71,14 +117,15 @@ export default function ListadoReparacionesScreen() {
   };
 
   const renderItem = ({ item }: { item: any }) => {
-    const isExpanded = cardExpandida === item.id;
+    const itemId = item.id || item.reparacion_orden_id;
+    const isExpanded = cardExpandida === itemId;
 
     return (
       <View style={styles.cardContainer}>
         <TouchableOpacity 
           style={styles.card} 
           activeOpacity={0.9}
-          onPress={() => setCardExpandida(isExpanded ? null : item.id)}
+          onPress={() => setCardExpandida(isExpanded ? null : itemId)}
         >
           <View style={styles.cardHeader}>
             <Text style={styles.equipoTitle}>
@@ -90,7 +137,7 @@ export default function ListadoReparacionesScreen() {
           </View>
           
           <Text style={styles.subEquipo}>
-            {item.numero_serie ? `Serie: ${item.numero_serie}` : ''} {item.imei ? `| IMEI: ${item.imei}` : ''}
+            Orden #{itemId} {item.numero_serie ? `| Serie: ${item.numero_serie}` : ''}
           </Text>
 
           <View style={styles.divider} />
@@ -103,7 +150,7 @@ export default function ListadoReparacionesScreen() {
           </Text>
 
           <View style={styles.footerCard}>
-            <Text style={styles.total}>Total: ${item.total || 0}</Text>
+            <Text style={styles.total}>Total: ${item.total || item.presupuesto || 0}</Text>
             <Text style={styles.pago}>Pago: {item.forma_pago || 'No especificada'}</Text>
           </View>
 
@@ -112,34 +159,49 @@ export default function ListadoReparacionesScreen() {
 
         {isExpanded && (
           <View style={styles.optionsContainer}>
+            
+            {/* GALERÍA DE IMÁGENES AL EXPANDIR */}
+            {item.imagenes && item.imagenes.length > 0 && (
+              <View style={styles.imagenesContainer}>
+                <Text style={styles.boldText}>Imágenes del dispositivo:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
+                  {item.imagenes.map((imgUrl: string, idx: number) => (
+                    <TouchableOpacity key={idx} onPress={() => setImagenModalUrl(imgUrl)}>
+                      <Image source={{ uri: imgUrl }} style={styles.previewImage} />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             <Text style={styles.optionsTitle}>Actualizar estado de la orden:</Text>
             <View style={styles.optionsRow}>
               <TouchableOpacity 
                 style={[styles.estadoBtn, { backgroundColor: '#D97706' }]}
-                onPress={() => handleCambiarEstado(item.id, 1)}
+                onPress={() => confirmarCambioEstado(itemId, 1, 'Pendiente')}
               >
                 <Text style={styles.estadoBtnText}>Pendiente</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={[styles.estadoBtn, { backgroundColor: '#2563EB' }]}
-                onPress={() => handleCambiarEstado(item.id, 2)}
+                onPress={() => confirmarCambioEstado(itemId, 2, 'En Proceso')}
               >
                 <Text style={styles.estadoBtnText}>En Proceso</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={[styles.estadoBtn, { backgroundColor: '#16A34A' }]}
-                onPress={() => handleCambiarEstado(item.id, 3)}
+                onPress={() => confirmarCambioEstado(itemId, 3, 'Finalizado')}
               >
                 <Text style={styles.estadoBtnText}>Finalizado</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={[styles.estadoBtn, { backgroundColor: '#DC2626' }]}
-                onPress={() => handleCambiarEstado(item.id, 4)}
+                onPress={() => confirmarCambioEstado(itemId, 4, 'Cancelado')}
               >
-                <Text style={styles.estadoBtnText}>Cancelado</Text>
+                <Text style={styles.estadoBtnText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -152,6 +214,44 @@ export default function ListadoReparacionesScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Mis Reparaciones Activas</Text>
 
+      {/* BARRA DE FILTROS SUPERIOR */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtroScroll} contentContainerStyle={styles.filtroContainer}>
+        <TouchableOpacity 
+          style={[styles.filtroChip, filtroActivo === 'todos' && styles.filtroChipActive]}
+          onPress={() => aplicarFiltro('todos')}
+        >
+          <Text style={[styles.filtroText, filtroActivo === 'todos' && styles.filtroTextActive]}>Todas</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.filtroChip, filtroActivo === '1' && styles.filtroChipActive]}
+          onPress={() => aplicarFiltro('1')}
+        >
+          <Text style={[styles.filtroText, filtroActivo === '1' && styles.filtroTextActive]}>Pendientes</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.filtroChip, filtroActivo === '2' && styles.filtroChipActive]}
+          onPress={() => aplicarFiltro('2')}
+        >
+          <Text style={[styles.filtroText, filtroActivo === '2' && styles.filtroTextActive]}>En Proceso</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.filtroChip, filtroActivo === '3' && styles.filtroChipActive]}
+          onPress={() => aplicarFiltro('3')}
+        >
+          <Text style={[styles.filtroText, filtroActivo === '3' && styles.filtroTextActive]}>Finalizadas</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.filtroChip, filtroActivo === '4' && styles.filtroChipActive]}
+          onPress={() => aplicarFiltro('4')}
+        >
+          <Text style={[styles.filtroText, filtroActivo === '4' && styles.filtroTextActive]}>Canceladas</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#2563EB" />
@@ -160,26 +260,58 @@ export default function ListadoReparacionesScreen() {
         <View style={styles.emptyContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
-      ) : reparaciones.length === 0 ? (
+      ) : reparacionesFiltradas.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No tenés reparaciones asignadas actualmente.</Text>
+          <Text style={styles.emptyText}>No hay reparaciones en este filtro.</Text>
         </View>
       ) : (
         <FlatList
-          data={reparaciones}
-          keyExtractor={(item) => item.id.toString()}
+          data={reparacionesFiltradas}
+          keyExtractor={(item, index) => String(item.id || item.reparacion_orden_id || index)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* Modal para ver la imagen en pantalla completa (Zoom) */}
+      <Modal visible={!!imagenModalUrl} transparent={true} onRequestClose={() => setImagenModalUrl(null)}>
+        <View style={styles.modalBackground}>
+          <TouchableOpacity style={styles.modalCloseButton} onPress={() => setImagenModalUrl(null)}>
+            <Text style={styles.modalCloseText}>✕ Cerrar</Text>
+          </TouchableOpacity>
+          {imagenModalUrl && (
+            <Image source={{ uri: imagenModalUrl }} style={styles.fullImage} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F6FA', padding: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', marginBottom: 12 },
+  
+  filtroScroll: { maxHeight: 45, marginBottom: 14 },
+  filtroContainer: { alignItems: 'center', gap: 8 },
+  filtroChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    height: 36,
+    justifyContent: 'center',
+  },
+  filtroChipActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
+  },
+  filtroText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  filtroTextActive: { color: '#FFFFFF' },
+
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContainer: { paddingBottom: 20 },
   cardContainer: { marginBottom: 14 },
@@ -229,6 +361,9 @@ const styles = StyleSheet.create({
   pago: { fontSize: 12, color: '#64748B', fontWeight: '500' },
   fecha: { fontSize: 11, color: '#94A3B8', marginTop: 2 },
   
+  imagenesContainer: { marginBottom: 12 },
+  previewImage: { width: 65, height: 65, borderRadius: 8, marginRight: 8, backgroundColor: '#E2E8F0', borderWidth: 1, borderColor: '#CBD5E1' },
+
   optionsContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 12,
@@ -250,7 +385,12 @@ const styles = StyleSheet.create({
   },
   estadoBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: 'bold' },
 
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, marginTop: 40 },
   emptyText: { color: '#64748B', textAlign: 'center', fontSize: 14 },
   errorText: { color: '#DC2626', textAlign: 'center', fontSize: 14 },
+
+  modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  fullImage: { width: width * 0.95, height: width * 0.95 },
+  modalCloseButton: { position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 },
+  modalCloseText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }
 });
