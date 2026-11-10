@@ -1,1095 +1,375 @@
-
-import React, { useEffect, useState } from 'react';
-
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Alert,
   ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  LayoutAnimation,
   Modal,
+  Platform,
   RefreshControl,
-  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  UIManager,
+  View,
 } from 'react-native';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
 
-// ==========================================
-// INTERFAZ DE DATOS
-// ==========================================
-
-interface ReparacionOrden {
-  reparacion_orden_id: number;
-  diagnostico_cliente: string;
-  total: number;
-  pagado: number;
-  fecha_registro: string;
-  equipo_id: number;
-
-  cliente_nombre?: string;
-  cliente_apellido?: string;
-  servicio_nombre?: string;
-
-  marca_nombre?: string;
-  categoria_nombre?: string;
-
-  numero_serie?: string;
-  imei?: string;
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// ==========================================
-// CONFIGURACIÓN API
-// ==========================================
+const API_ENTREGAS = `${process.env.EXPO_PUBLIC_API_URL}/recepcionista/entregas.php`;
 
-const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL ?? ''
-).replace(/\/+$/, '');
+export default function EntregasScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const empleadoId = params.empleadoId ? Number(params.empleadoId) : 11;
 
-const API_URL = `${API_BASE_URL}/recepcionista/entregar.php`;
-
-// ==========================================
-// COMPONENTE PRINCIPAL
-// ==========================================
-
-export default function EntregarScreen() {
-
-  const params = useLocalSearchParams<{
-    empleadoId?: string;
-  }>();
-
-  const currentEmpleadoId = params.empleadoId
-    ? Number(params.empleadoId)
-    : 1;
-
-  const [ordenes, setOrdenes] = useState<ReparacionOrden[]>([]);
-
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [formasPagoDisponibles, setFormasPagoDisponibles] = useState<any[]>([]);
+  const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [procesando, setProcesando] = useState(false);
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [ordenExpandidaId, setOrdenExpandidaId] = useState<number | null>(null);
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState<any>(null);
+  const [pagosSeleccionados, setPagosSeleccionados] = useState<any[]>([]);
+  const [procesandoEntrega, setProcesandoEntrega] = useState(false);
+  const [urlQr, setUrlQr] = useState<string | null>(null);
 
-  const [ordenSeleccionada, setOrdenSeleccionada] =
-    useState<ReparacionOrden | null>(null);
-
-  const [codigoIngresado, setCodigoIngresado] = useState('');
-
-  // ==========================================
-  // FORMATEAR DINERO
-  // ==========================================
-
-  const formatoPrecio = (precio: number) => {
-
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      maximumFractionDigits: 0,
-    }).format(Number(precio) || 0);
-
-  };
-
-  // ==========================================
-  // CARGAR ÓRDENES
-  // ==========================================
-
-  const cargarOrdenesListas = async (actualizar = false) => {
-
-    if (!API_BASE_URL) {
-      Alert.alert(
-        'Configuración',
-        'Falta configurar EXPO_PUBLIC_API_URL en tu proyecto.'
-      );
-
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    if (actualizar) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
+  const cargarEntregas = async (query = '') => {
     try {
-
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      const resultado = await response.json();
-
-      if (!response.ok || !resultado.success) {
-        throw new Error(
-          resultado.message || 'No se pudieron cargar las órdenes.'
-        );
+      if (!refreshing) setLoading(true);
+      const res = await fetch(`${API_ENTREGAS}?busqueda=${encodeURIComponent(query)}`);
+      const text = await res.text();
+      
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        console.error("Respuesta no JSON:", text);
+        return;
       }
 
-      setOrdenes(resultado.data || []);
-
-    } catch (error) {
-
-      console.error('Error cargando órdenes:', error);
-
-      Alert.alert(
-        'Error',
-        error instanceof Error
-          ? error.message
-          : 'No se pudo conectar con el servidor.'
-      );
-
+      if (json.success) {
+        setOrdenes(json.ordenes || []);
+        setFormasPagoDisponibles(json.formas_pago || []);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
-
       setLoading(false);
       setRefreshing(false);
-
     }
   };
 
   useEffect(() => {
-    cargarOrdenesListas();
+    cargarEntregas(busqueda);
   }, []);
 
-  // ==========================================
-  // ABRIR MODAL
-  // ==========================================
-
-  const abrirModalEntrega = (orden: ReparacionOrden) => {
-
-    setOrdenSeleccionada(orden);
-    setCodigoIngresado('');
-    setModalVisible(true);
-
+  const toggleExpandir = (id: number) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOrdenExpandidaId(ordenExpandidaId === id ? null : id);
   };
 
-  // ==========================================
-  // CONFIRMAR ENTREGA
-  // ==========================================
+  const abrirModalEntrega = (orden: any) => {
+    setOrdenSeleccionada(orden);
+    setUrlQr(null);
+    const saldo = Number(orden.saldo_pendiente) > 0 ? Number(orden.saldo_pendiente) : 0;
+    const defaultPagoId = formasPagoDisponibles.length > 0 ? formasPagoDisponibles[0].formas_pago_id : 1;
+    setPagosSeleccionados([{ forma_pago_id: defaultPagoId, monto: saldo.toString() }]);
+  };
 
-  const confirmarEntrega = async () => {
+  const agregarMetodoPago = () => {
+    const defaultPagoId = formasPagoDisponibles.length > 0 ? formasPagoDisponibles[0].formas_pago_id : 1;
+    setPagosSeleccionados([...pagosSeleccionados, { forma_pago_id: defaultPagoId, monto: '0' }]);
+  };
 
-    if (!ordenSeleccionada || procesando) return;
+  const eliminarMetodoPago = (index: number) => {
+    if (pagosSeleccionados.length === 1) return;
+    setPagosSeleccionados(pagosSeleccionados.filter((_, i) => i !== index));
+  };
 
-    if (!/^[0-9]{6}$/.test(codigoIngresado)) {
+  const actualizarPago = (index: number, campo: string, valor: any) => {
+    const nuevosPagos = [...pagosSeleccionados];
+    nuevosPagos[index][campo] = valor;
+    setPagosSeleccionados(nuevosPagos);
+  };
 
-      Alert.alert(
-        'Código inválido',
-        'Ingrese los 6 dígitos del código de seguridad.'
-      );
-
-      return;
-    }
-
-    setProcesando(true);
+  const pagarConMercadoPagoAPI = async () => {
+    if (!ordenSeleccionada) return;
+    const saldo = Number(ordenSeleccionada.saldo_pendiente) > 0 ? Number(ordenSeleccionada.saldo_pendiente) : 0;
 
     try {
-
-      const response = await fetch(API_URL, {
+      setProcesandoEntrega(true);
+      const res = await fetch(`${API_ENTREGAS}?accion=crear_preferencia`, {
         method: 'POST',
-
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reparacion_orden_id:
-            ordenSeleccionada.reparacion_orden_id,
-
-          codigo_seguridad: codigoIngresado,
-
-          empleado_id: currentEmpleadoId,
+          reparacion_orden_id: ordenSeleccionada.reparacion_orden_id,
+          monto: saldo
         }),
       });
 
-      const resultado = await response.json();
-
-      if (!response.ok || !resultado.success) {
-
-        Alert.alert(
-          'No se pudo entregar',
-          resultado.message || 'Verifique el código ingresado.'
-        );
-
+      const textResponse = await res.text();
+      let json;
+      try {
+        json = JSON.parse(textResponse);
+      } catch (e) {
+        Alert.alert('Error', 'Respuesta no válida del servidor: ' + textResponse);
         return;
       }
 
-      setModalVisible(false);
-      setCodigoIngresado('');
-      setOrdenSeleccionada(null);
-
-      Alert.alert(
-        '¡Entrega realizada!',
-        resultado.message,
-        [
-          {
-            text: 'Aceptar',
-            onPress: () => cargarOrdenesListas(),
-          },
-        ]
-      );
-
-    } catch (error) {
-
-      console.error('Error al entregar:', error);
-
-      Alert.alert(
-        'Error de conexión',
-        'No se pudo procesar la entrega.'
-      );
-
+      if (json.success && json.init_point) {
+        setUrlQr(json.init_point);
+      } else {
+        Alert.alert('Error', json.message || 'No se pudo generar la preferencia de pago.');
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Fallo al conectar con la API de Mercado Pago.');
     } finally {
-
-      setProcesando(false);
-
+      setProcesandoEntrega(false);
     }
   };
 
-  // ==========================================
-  // TARJETA DE ORDEN
-  // ==========================================
+  const confirmarEntregaConPagos = async () => {
+    if (!ordenSeleccionada) return;
 
-  const renderOrden = ({ item }: { item: ReparacionOrden }) => {
+    try {
+      setProcesandoEntrega(true);
+      const res = await fetch(API_ENTREGAS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reparacion_orden_id: ordenSeleccionada.reparacion_orden_id,
+          empleado_id: empleadoId,
+          pagos: pagosSeleccionados.map(p => ({ forma_pago_id: Number(p.forma_pago_id), monto: Number(p.monto) }))
+        }),
+      });
 
-    const estaPagado = Number(item.pagado) === 1;
+      const textResponse = await res.text();
+      let json;
+      try {
+        json = JSON.parse(textResponse);
+      } catch (e) {
+        Alert.alert('Error Backend', textResponse);
+        return;
+      }
 
-    return (
-
-      <View style={styles.card}>
-
-        {/* CABECERA */}
-
-        <View style={styles.cardHeader}>
-
-          <View>
-
-            <Text style={styles.orderLabel}>
-              ORDEN DE REPARACIÓN
-            </Text>
-
-            <Text style={styles.orderNumber}>
-              #{item.reparacion_orden_id}
-            </Text>
-
-          </View>
-
-          <View style={styles.finalizadoBadge}>
-
-            <View style={styles.dot} />
-
-            <Text style={styles.finalizadoText}>
-              Finalizado
-            </Text>
-
-          </View>
-
-        </View>
-
-        <View style={styles.separator} />
-
-        {/* CLIENTE */}
-
-        <View style={styles.infoSection}>
-
-          <Text style={styles.sectionTitle}>
-            CLIENTE
-          </Text>
-
-          <Text style={styles.infoValue}>
-            {item.cliente_nombre || 'Sin nombre'}{' '}
-            {item.cliente_apellido || ''}
-          </Text>
-
-        </View>
-
-        {/* SERVICIO */}
-
-        <View style={styles.infoSection}>
-
-          <Text style={styles.sectionTitle}>
-            SERVICIO
-          </Text>
-
-          <Text style={styles.infoValue}>
-            {item.servicio_nombre || 'Sin servicio registrado'}
-          </Text>
-
-        </View>
-
-        {/* EQUIPO */}
-
-        <View style={styles.infoSection}>
-
-          <Text style={styles.sectionTitle}>
-            EQUIPO
-          </Text>
-
-          <Text style={styles.infoValue}>
-            {item.marca_nombre || 'Sin marca'}
-            {' · '}
-            {item.categoria_nombre || 'Equipo'}
-          </Text>
-
-          {item.numero_serie ? (
-            <Text style={styles.secondaryText}>
-              Serie: {item.numero_serie}
-            </Text>
-          ) : null}
-
-          {item.imei ? (
-            <Text style={styles.secondaryText}>
-              IMEI: {item.imei}
-            </Text>
-          ) : null}
-
-        </View>
-
-        {/* DIAGNÓSTICO */}
-
-        <View style={styles.infoSection}>
-
-          <Text style={styles.sectionTitle}>
-            DIAGNÓSTICO DEL CLIENTE
-          </Text>
-
-          <Text style={styles.diagnostic}>
-            {item.diagnostico_cliente || 'Sin diagnóstico'}
-          </Text>
-
-        </View>
-
-        <View style={styles.separator} />
-
-        {/* PRECIO Y PAGO */}
-
-        <View style={styles.paymentContainer}>
-
-          <View>
-
-            <Text style={styles.sectionTitle}>
-              TOTAL
-            </Text>
-
-            <Text style={styles.totalPrice}>
-              {formatoPrecio(item.total)}
-            </Text>
-
-          </View>
-
-          <View
-            style={[
-              styles.paymentBadge,
-              estaPagado
-                ? styles.paid
-                : styles.pending,
-            ]}
-          >
-
-            <Text
-              style={[
-                styles.paymentText,
-                estaPagado
-                  ? styles.paidText
-                  : styles.pendingText,
-              ]}
-            >
-              {estaPagado ? '✓ Pagado' : '● Pendiente'}
-            </Text>
-
-          </View>
-
-        </View>
-
-        {/* FECHA */}
-
-        <Text style={styles.dateText}>
-          Registrado: {item.fecha_registro}
-        </Text>
-
-        {/* BOTÓN */}
-
-        <TouchableOpacity
-          style={styles.deliverButton}
-          activeOpacity={0.85}
-          onPress={() => abrirModalEntrega(item)}
-        >
-
-          <Text style={styles.deliverButtonText}>
-            Confirmar entrega
-          </Text>
-
-          <Text style={styles.buttonArrow}>
-            →
-          </Text>
-
-        </TouchableOpacity>
-
-      </View>
-
-    );
+      if (json.success) {
+        Alert.alert('¡Éxito!', json.message);
+        setOrdenSeleccionada(null);
+        setUrlQr(null);
+        cargarEntregas(busqueda);
+      } else {
+        Alert.alert('Error', json.message);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'No se pudo completar la operación.');
+    } finally {
+      setProcesandoEntrega(false);
+    }
   };
 
-  // ==========================================
-  // PANTALLA
-  // ==========================================
-
   return (
-
-    <SafeAreaView style={styles.container}>
-
-      <StatusBar
-        backgroundColor="#F5F7FB",   
-        barStyle="dark-content"
-      />
-
-      {/* HEADER */}
-
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-
-        <View>
-
-          <Text style={styles.headerSmall}>
-            GESTIÓN DE SUCURSAL
-          </Text>
-
-          <Text style={styles.title}>
-            Entregas
-          </Text>
-
-          <Text style={styles.subtitle}>
-            Órdenes listas para retirar
-          </Text>
-
-        </View>
-
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={() => cargarOrdenesListas(true)}
-        >
-
-          <Text style={styles.refreshIcon}>
-            ↻
-          </Text>
-
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-
+        <Text style={styles.headerTitle}>Entrega de Equipos</Text>
       </View>
 
-      {/* CONTADOR */}
-
-      {!loading && (
-
-        <View style={styles.counterContainer}>
-
-          <View style={styles.counterCard}>
-
-            <Text style={styles.counterNumber}>
-              {ordenes.length}
-            </Text>
-
-            <Text style={styles.counterLabel}>
-              Órdenes pendientes de entrega
-            </Text>
-
-          </View>
-
-        </View>
-
-      )}
-
-      {/* LISTADO */}
-
-      {loading ? (
-
-        <View style={styles.centerContainer}>
-
-          <ActivityIndicator
-            size="large"
-            color="#2563EB"
-          />
-
-          <Text style={styles.loadingText}>
-            Cargando órdenes...
-          </Text>
-
-        </View>
-
-      ) : (
-
-        <FlatList
-          data={ordenes}
-          keyExtractor={(item) =>
-            item.reparacion_orden_id.toString()
-          }
-          renderItem={renderOrden}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => cargarOrdenesListas(true)}
-              colors={['#2563EB']}
-            />
-          }
-
-          ListEmptyComponent={
-
-            <View style={styles.emptyContainer}>
-
-              <Text style={styles.emptyIcon}>
-                ✓
-              </Text>
-
-              <Text style={styles.emptyTitle}>
-                ¡Todo al día!
-              </Text>
-
-              <Text style={styles.emptyText}>
-                No hay órdenes finalizadas pendientes de retirar.
-              </Text>
-
-            </View>
-
-          }
-
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#8696A0" style={{ marginRight: 8 }} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por DNI o Código..."
+          placeholderTextColor="#8696A0"
+          value={busqueda}
+          onChangeText={(texto) => { setBusqueda(texto); cargarEntregas(texto); }}
         />
+      </View>
 
-      )}
+      <FlatList
+        data={ordenes}
+        keyExtractor={(item) => item.reparacion_orden_id.toString()}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => cargarEntregas(busqueda)} tintColor="#00A884" />}
+        renderItem={({ item }) => {
+          const estaExpandido = ordenExpandidaId === item.reparacion_orden_id;
 
-      {/* ==================================
-          MODAL DE ENTREGA
-      ================================== */}
-
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          if (!procesando) setModalVisible(false);
-        }}
-      >
-
-        <View style={styles.modalOverlay}>
-
-          <View style={styles.modalContent}>
-
-            <View style={styles.modalIconContainer}>
-
-              <Text style={styles.modalIcon}>
-                ✓
-              </Text>
-
-            </View>
-
-            <Text style={styles.modalTitle}>
-              Confirmar entrega
-            </Text>
-
-            <Text style={styles.modalSubtitle}>
-              Ingrese el código de seguridad que proporciona el cliente.
-            </Text>
-
-            <View style={styles.orderModalBadge}>
-
-              <Text style={styles.orderModalText}>
-                ORDEN #{ordenSeleccionada?.reparacion_orden_id}
-              </Text>
-
-            </View>
-
-            <TextInput
-              style={styles.codeInput}
-              placeholder="000000"
-              placeholderTextColor="#94A3B8"
-              keyboardType="number-pad"
-              maxLength={6}
-              value={codigoIngresado}
-              onChangeText={(text) =>
-                setCodigoIngresado(
-                  text.replace(/[^0-9]/g, '').slice(0, 6)
-                )
-              }
-              editable={!procesando}
-              textAlign="center"
-              autoFocus
-            />
-
-            <Text style={styles.codeHint}>
-              Código de seguridad de 6 dígitos
-            </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.confirmButton,
-                procesando && styles.disabledButton,
-              ]}
-              onPress={confirmarEntrega}
-              disabled={procesando}
+          return (
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              style={styles.card} 
+              onPress={() => toggleExpandir(item.reparacion_orden_id)}
             >
+              <View style={styles.cardHeader}>
+                <Text style={styles.ordenId}>Orden #{item.reparacion_orden_id}</Text>
+                <Ionicons name={estaExpandido ? "chevron-up" : "chevron-down"} size={20} color="#00A884" />
+              </View>
+              
+              <Text style={styles.clienteNombre}>{item.cliente_nombre} {item.cliente_apellido}</Text>
+              <Text style={styles.detailText}>Equipo: {item.marca_nombre} {item.modelo_nombre}</Text>
 
-              {procesando ? (
+              {estaExpandido && (
+                <View style={styles.detailsContainer}>
+                  <View style={styles.divider} />
+                  <Text style={styles.infoTitle}>Información del Cliente y Equipo:</Text>
+                  <Text style={styles.infoText}>• DNI / CUIT: <Text style={styles.infoValue}>{item.cliente_dni || 'No registrado'}</Text></Text>
+                  <Text style={styles.infoText}>• N° de Serie: <Text style={styles.infoValue}>{item.numero_serie || 'N/A'}</Text></Text>
+                  <Text style={styles.infoText}>• IMEI: <Text style={styles.infoValue}>{item.imei || 'N/A'}</Text></Text>
+                  <Text style={styles.infoText}>• Diagnóstico: <Text style={styles.infoValue}>{item.diagnostico_cliente}</Text></Text>
 
-                <ActivityIndicator color="#FFFFFF" />
+                  <View style={styles.codigoBox}>
+                    <Ionicons name="shield-checkmark" size={18} color="#F59E0B" style={{ marginRight: 6 }} />
+                    <Text style={styles.codigoLabel}>Código de Seguridad:</Text>
+                    <Text style={styles.codigoValue}>{item.codigo_seguridad || '----'}</Text>
+                  </View>
 
-              ) : (
+                  <Text style={styles.precioSaldo}>Saldo Pendiente: ${item.saldo_pendiente}</Text>
 
-                <Text style={styles.confirmButtonText}>
-                  Confirmar entrega
-                </Text>
-
+                  <TouchableOpacity style={styles.btnEntregar} onPress={() => abrirModalEntrega(item)}>
+                    <Text style={styles.btnEntregarText}>Procesar Cobro y Entrega</Text>
+                  </TouchableOpacity>
+                </View>
               )}
-
             </TouchableOpacity>
+          );
+        }}
+      />
 
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setModalVisible(false)}
-              disabled={procesando}
-            >
+      <Modal visible={!!ordenSeleccionada} transparent animationType="fade" onRequestClose={() => { setOrdenSeleccionada(null); setUrlQr(null); }}>
+        <View style={styles.modalBg}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Métodos de Pago y Cierre</Text>
+            
+            {urlQr ? (
+              <View style={{ alignItems: 'center', marginVertical: 10 }}>
+                <Text style={{ color: '#00A884', fontWeight: 'bold', marginBottom: 12, textAlign: 'center', fontSize: 14 }}>
+                  Escaneá el código QR con Mercado Pago:
+                </Text>
+                <Image 
+                  source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(urlQr)}` }} 
+                  style={{ width: 210, height: 210, backgroundColor: '#FFF', borderRadius: 8, padding: 10 }} 
+                />
+                <TouchableOpacity 
+                  style={[styles.btnModalCancel, { marginTop: 15, width: '100%' }]} 
+                  onPress={() => setUrlQr(null)}
+                >
+                  <Text style={styles.btnModalCancelText}>← Generar otro / Métodos Locales</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.btnMercadoPago} onPress={pagarConMercadoPagoAPI}>
+                  <Ionicons name="qr-code-outline" size={18} color="#FFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.btnMpText}>Generar QR de Mercado Pago</Text>
+                </TouchableOpacity>
 
-              <Text style={styles.cancelButtonText}>
-                Cancelar
-              </Text>
+                <View style={{ marginVertical: 10 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#E9EDEF', fontSize: 13, fontWeight: 'bold' }}>Métodos Locales:</Text>
+                    <TouchableOpacity onPress={agregarMetodoPago}>
+                      <Text style={{ color: '#00A884', fontSize: 12, fontWeight: 'bold' }}>+ Agregar Método</Text>
+                    </TouchableOpacity>
+                  </View>
 
-            </TouchableOpacity>
+                  {pagosSeleccionados.map((pago, index) => (
+                    <View key={index} style={styles.pagoRow}>
+                      <View style={styles.pickerContainer}>
+                        <Picker
+                          selectedValue={String(pago.forma_pago_id)}
+                          onValueChange={(val) => actualizarPago(index, 'forma_pago_id', val)}
+                          style={{ color: '#FFF', height: 40 }}
+                        >
+                          {formasPagoDisponibles.map((fp) => (
+                            <Picker.Item key={fp.formas_pago_id} label={fp.forma} value={String(fp.formas_pago_id)} color="#000" />
+                          ))}
+                        </Picker>
+                      </View>
+                      <TextInput
+                        style={styles.inputMonto}
+                        placeholder="Monto"
+                        placeholderTextColor="#8696A0"
+                        keyboardType="numeric"
+                        value={String(pago.monto)}
+                        onChangeText={(val) => actualizarPago(index, 'monto', val)}
+                      />
+                      {pagosSeleccionados.length > 1 && (
+                        <TouchableOpacity onPress={() => eliminarMetodoPago(index)} style={{ justifyContent: 'center', paddingLeft: 6 }}>
+                          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                </View>
 
+                {procesandoEntrega ? (
+                  <ActivityIndicator size="large" color="#00A884" style={{ marginVertical: 20 }} />
+                ) : (
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity style={styles.btnModalCancel} onPress={() => { setOrdenSeleccionada(null); setUrlQr(null); }}>
+                      <Text style={styles.btnModalCancelText}>Cancelar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnModalConfirm} onPress={confirmarEntregaConPagos}>
+                      <Text style={styles.btnModalConfirmText}>Registrar Entrega</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
           </View>
-
         </View>
-
       </Modal>
-
     </SafeAreaView>
-
   );
-
 }
 
-// ==========================================
-// ESTILOS
-// ==========================================
-
 const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FB',
-  },
-
-  header: {
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  headerSmall: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#2563EB',
-    letterSpacing: 2,
-    marginBottom: 6,
-  },
-
-  title: {
-    fontSize: 29,
-    fontWeight: '900',
-    color: '#111827',
-  },
-
-  subtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 4,
-  },
-
-  refreshButton: {
-    width: 45,
-    height: 45,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-  },
-
-  refreshIcon: {
-    fontSize: 27,
-    color: '#2563EB',
-    fontWeight: 'bold',
-  },
-
-  counterContainer: {
-    paddingHorizontal: 18,
-    marginBottom: 8,
-  },
-
-  counterCard: {
-    backgroundColor: '#EAF1FF',
-    padding: 17,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-
-  counterNumber: {
-    fontSize: 25,
-    fontWeight: '900',
-    color: '#2563EB',
-  },
-
-  counterLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#334155',
-  },
-
-  listContainer: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 35,
-    flexGrow: 1,
-  },
-
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 19,
-    padding: 18,
-    marginBottom: 17,
-    borderWidth: 1,
-    borderColor: '#E8EDF5',
-
-    elevation: 3,
-
-    shadowColor: '#64748B',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  orderLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 1.5,
-  },
-
-  orderNumber: {
-    fontSize: 25,
-    fontWeight: '900',
-    color: '#2563EB',
-    marginTop: 4,
-  },
-
-  finalizadoBadge: {
-    backgroundColor: '#DCFCE7',
-    borderRadius: 20,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  dot: {
-    width: 7,
-    height: 7,
-    backgroundColor: '#16A34A',
-    borderRadius: 10,
-  },
-
-  finalizadoText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#15803D',
-  },
-
-  separator: {
-    height: 1,
-    backgroundColor: '#EDF1F6',
-    marginVertical: 15,
-  },
-
-  infoSection: {
-    marginBottom: 14,
-  },
-
-  sectionTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 1.2,
-    marginBottom: 5,
-  },
-
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-
-  secondaryText: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 4,
-  },
-
-  diagnostic: {
-    fontSize: 13,
-    color: '#475569',
-    lineHeight: 20,
-  },
-
-  paymentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  totalPrice: {
-    fontSize: 21,
-    fontWeight: '900',
-    color: '#111827',
-    marginTop: 3,
-  },
-
-  paymentBadge: {
-    borderRadius: 9,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-
-  paid: {
-    backgroundColor: '#DCFCE7',
-  },
-
-  pending: {
-    backgroundColor: '#FEE2E2',
-  },
-
-  paymentText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-
-  paidText: {
-    color: '#15803D',
-  },
-
-  pendingText: {
-    color: '#DC2626',
-  },
-
-  dateText: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 17,
-  },
-
-  deliverButton: {
-    height: 49,
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    marginTop: 16,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  deliverButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  buttonArrow: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  loadingText: {
-    color: '#64748B',
-    marginTop: 12,
-    fontSize: 13,
-  },
-
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-    minHeight: 300,
-  },
-
-  emptyIcon: {
-    width: 70,
-    height: 70,
-    lineHeight: 70,
-    textAlign: 'center',
-    overflow: 'hidden',
-    borderRadius: 35,
-    backgroundColor: '#DCFCE7',
-    color: '#16A34A',
-    fontSize: 38,
-    fontWeight: 'bold',
-  },
-
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#1E293B',
-    marginTop: 18,
-  },
-
-  emptyText: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 21,
-    marginTop: 8,
-  },
-
-  // MODAL
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 22,
-  },
-
-  modalContent: {
-    width: '100%',
-    maxWidth: 370,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 23,
-    padding: 25,
-    alignItems: 'center',
-  },
-
-  modalIconContainer: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: '#EAF1FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-
-  modalIcon: {
-    fontSize: 31,
-    fontWeight: 'bold',
-    color: '#2563EB',
-  },
-
-  modalTitle: {
-    fontSize: 21,
-    fontWeight: '900',
-    color: '#0F172A',
-  },
-
-  modalSubtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginTop: 9,
-  },
-
-  orderModalBadge: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 9,
-    paddingHorizontal: 15,
-    paddingVertical: 9,
-    marginTop: 18,
-  },
-
-  orderModalText: {
-    color: '#2563EB',
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-
-  codeInput: {
-    width: '100%',
-    height: 58,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
-    marginTop: 20,
-    color: '#0F172A',
-    fontSize: 25,
-    fontWeight: '900',
-    letterSpacing: 12,
-  },
-
-  codeHint: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 9,
-    marginBottom: 20,
-  },
-
-  confirmButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  disabledButton: {
-    opacity: 0.6,
-  },
-
-  confirmButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-
-  cancelButton: {
-    padding: 14,
-    marginTop: 5,
-  },
-
-  cancelButtonText: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
+  container: { flex: 1, backgroundColor: '#0B141A' },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2C34', padding: 16 },
+  backBtn: { marginRight: 10 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#202C33', margin: 16, borderRadius: 10, paddingHorizontal: 12, height: 44 },
+  searchInput: { flex: 1, color: '#E9EDEF', fontSize: 14 },
+  listContainer: { paddingHorizontal: 16, paddingBottom: 20 },
+  card: { backgroundColor: '#111B21', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#222D34' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  ordenId: { color: '#00A884', fontSize: 13, fontWeight: 'bold' },
+  clienteNombre: { color: '#E9EDEF', fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
+  detailText: { color: '#94A3B8', fontSize: 13 },
+  detailsContainer: { marginTop: 10 },
+  divider: { height: 1, backgroundColor: '#222D34', marginVertical: 8 },
+  infoTitle: { color: '#00A884', fontSize: 12, fontWeight: 'bold', marginBottom: 6 },
+  infoText: { color: '#8696A0', fontSize: 12, marginBottom: 2 },
+  infoValue: { color: '#FFF', fontWeight: '500' },
+  codigoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2C34', padding: 10, borderRadius: 8, marginVertical: 10, borderWidth: 1, borderColor: '#334155' },
+  codigoLabel: { color: '#E9EDEF', fontSize: 13, flex: 1 },
+  codigoValue: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold', letterSpacing: 2 },
+  precioSaldo: { color: '#EF4444', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
+  btnEntregar: { backgroundColor: '#00A884', padding: 12, borderRadius: 8, alignItems: 'center' },
+  btnEntregarText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 20 },
+  modalCard: { backgroundColor: '#111B21', borderRadius: 14, padding: 20, borderWidth: 1, borderColor: '#222D34' },
+  modalTitle: { color: '#E9EDEF', fontSize: 17, fontWeight: 'bold', marginBottom: 12 },
+  btnMercadoPago: { backgroundColor: '#009EE3', flexDirection: 'row', padding: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  btnMpText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
+  pagoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  pickerContainer: { flex: 2, backgroundColor: '#1F2C34', borderRadius: 8, marginRight: 8, overflow: 'hidden' },
+  inputMonto: { flex: 1, backgroundColor: '#1F2C34', color: '#FFF', paddingHorizontal: 10, height: 40, borderRadius: 8 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  btnModalCancel: { flex: 1, backgroundColor: '#334155', padding: 10, borderRadius: 8, alignItems: 'center' },
+  btnModalCancelText: { color: '#FFF', fontWeight: 'bold' },
+  btnModalConfirm: { flex: 1.5, backgroundColor: '#00A884', padding: 10, borderRadius: 8, alignItems: 'center' },
+  btnModalConfirmText: { color: '#FFF', fontWeight: 'bold' },
 });
