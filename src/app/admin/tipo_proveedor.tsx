@@ -18,8 +18,8 @@ interface TipoProveedor {
   nombre: string;
   estado_general_id?: number;
 }
-
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/admin/tipo_proveedor.php`;
+`${process.env.EXPO_PUBLIC_API_URL}
+const API_URL = /admin/tipo_proveedor.php`;
 
 export default function TipoProveedorScreen() {
   const [tipos, setTipos] = useState<TipoProveedor[]>([]);

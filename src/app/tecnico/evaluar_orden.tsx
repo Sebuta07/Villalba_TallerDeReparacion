@@ -106,7 +106,6 @@ export default function EvaluarOrdenScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* CABECERA */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={20} color="#2563EB" />
@@ -119,9 +118,7 @@ export default function EvaluarOrdenScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* SELECTOR DE ORDEN */}
-        <Text style={styles.label}>ORDEN DE TRABAJO PENDIENTE</Text>
+        <Text style={styles.label}>ORDEN DE TRABAJO EN TALLER</Text>
         <TouchableOpacity
           style={styles.selectorCard}
           onPress={() => setModalSelectorVisible(true)}
@@ -139,13 +136,12 @@ export default function EvaluarOrdenScreen() {
             <Text style={styles.selectorSubText} numberOfLines={1}>
               {ordenSeleccionada
                 ? `🔧 ${ordenSeleccionada.marca_nombre || ''} ${ordenSeleccionada.modelo_nombre || 'Dispositivo'} — ${ordenSeleccionada.servicio_nombre || 'Servicio'}`
-                : `${ordenes.length} equipos pendientes en cola`}
+                : `${ordenes.length} equipos disponibles en cola`}
             </Text>
           </View>
           <Ionicons name="chevron-down" size={18} color="#64748B" />
         </TouchableOpacity>
 
-        {/* DETALLE DEL PROBLEMA REPORTADO */}
         {ordenSeleccionada && (
           <View style={styles.issueCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
@@ -158,7 +154,6 @@ export default function EvaluarOrdenScreen() {
           </View>
         )}
 
-        {/* CAMPO DE DIAGNÓSTICO TÉCNICO */}
         <Text style={styles.label}>INFORME TÉCNICO DE DIAGNÓSTICO</Text>
         <TextInput
           style={styles.textArea}
@@ -170,7 +165,6 @@ export default function EvaluarOrdenScreen() {
           onChangeText={setDiagnostico}
         />
 
-        {/* FILA DE MONTOS */}
         <View style={styles.rowInputs}>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>TOTAL ($)</Text>
@@ -197,7 +191,6 @@ export default function EvaluarOrdenScreen() {
           </View>
         </View>
 
-        {/* BOTÓN DE ACCIÓN */}
         <TouchableOpacity
           style={styles.submitBtn}
           onPress={enviarEvaluacion}
@@ -213,23 +206,22 @@ export default function EvaluarOrdenScreen() {
             </>
           )}
         </TouchableOpacity>
-
       </ScrollView>
 
-      {/* MODAL 1: LISTADO DESLIZABLE DE DISPOSITIVOS PENDIENTES */}
+      {/* MODAL 1: LISTADO DE DISPOSITIVOS */}
       <Modal visible={modalSelectorVisible} animationType="slide" transparent={true} onRequestClose={() => setModalSelectorVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.sheetContainer}>
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>Equipos Pendientes</Text>
-            <Text style={styles.sheetSub}>Selecciona un equipo para ver detalles o agregarlo</Text>
+            <Text style={styles.sheetTitle}>Equipos en Cola</Text>
+            <Text style={styles.sheetSub}>Selecciona un equipo para evaluar</Text>
 
             {fetching ? (
               <ActivityIndicator size="large" color="#2563EB" style={{ marginVertical: 30 }} />
             ) : ordenes.length === 0 ? (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
                 <Ionicons name="folder-open-outline" size={48} color="#64748B" />
-                <Text style={{ color: '#64748B', marginTop: 10, fontSize: 13 }}>No hay órdenes pendientes</Text>
+                <Text style={{ color: '#64748B', marginTop: 10, fontSize: 13 }}>No hay órdenes disponibles</Text>
               </View>
             ) : (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
@@ -264,7 +256,7 @@ export default function EvaluarOrdenScreen() {
         </View>
       </Modal>
 
-      {/* MODAL 2: VENTANITA DESLIZABLE AMPLIADA */}
+      {/* MODAL 2: DETALLE AMPLIADO */}
       <Modal visible={itemExpandido !== null} animationType="fade" transparent={true} onRequestClose={() => setItemExpandido(null)}>
         <View style={styles.modalOverlay}>
           <View style={styles.expandedCard}>
@@ -304,7 +296,6 @@ export default function EvaluarOrdenScreen() {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -317,7 +308,7 @@ const styles = StyleSheet.create({
   headerSubtitle: { color: '#64748B', fontSize: 11, marginTop: 1 },
   scrollContent: { padding: 16, paddingBottom: 30 },
   label: { color: '#475569', fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
-  selectorCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#CBD5E1', shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  selectorCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#CBD5E1' },
   selectorIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   selectorMainText: { color: '#0F172A', fontSize: 14, fontWeight: '700' },
   selectorSubText: { color: '#64748B', fontSize: 12, marginTop: 2 },
@@ -327,9 +318,8 @@ const styles = StyleSheet.create({
   textArea: { backgroundColor: '#FFFFFF', color: '#0F172A', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#CBD5E1', textAlignVertical: 'top', height: 120, fontSize: 13 },
   rowInputs: { flexDirection: 'row' },
   input: { backgroundColor: '#FFFFFF', color: '#0F172A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#CBD5E1', fontSize: 15, fontWeight: '700' },
-  submitBtn: { backgroundColor: '#2563EB', flexDirection: 'row', gap: 8, paddingVertical: 15, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 24, shadowColor: '#2563EB', shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 },
+  submitBtn: { backgroundColor: '#2563EB', flexDirection: 'row', gap: 8, paddingVertical: 15, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 24 },
   submitBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
-
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.5)', justifyContent: 'flex-end' },
   sheetContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%', borderWidth: 1, borderColor: '#E2E8F0' },
   expandedCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, borderWidth: 1, borderColor: '#E2E8F0' },

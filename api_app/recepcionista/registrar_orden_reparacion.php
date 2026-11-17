@@ -59,7 +59,6 @@ try {
     // MÉTODO POST: CREAR ORDEN DE REPARACIÓN
     // ==========================================
     if ($method === 'POST') {
-        // Captura de datos (soportando tanto POST tradicional como JSON)
         $contentType = $_SERVER["CONTENT_TYPE"] ?? '';
         $data = [];
 
@@ -69,7 +68,7 @@ try {
             $data = $_POST;
         }
 
-        // Si es una actualización de técnico mediante JSON
+        // Actualización de técnico mediante JSON
         if (isset($data['reparacion_orden_id']) && isset($data['tecnico_id']) && count($data) <= 2) {
             $sql = "UPDATE reparacion_orden SET tecnico_id = :tecnico_id WHERE reparacion_orden_id = :reparacion_orden_id";
             $stmt = $conexion->prepare($sql);
@@ -86,6 +85,7 @@ try {
             throw new Exception("No se recibió un ID de usuario válido.");
         }
 
+        $empleado_id = !empty($data['empleado_id']) ? $data['empleado_id'] : null;
         $servicio_id = $data['servicios_id'] ?? $data['servicio_id'] ?? 3;
         $diagnostico_cliente = $data['diagnostico_cliente'] ?? '';
         $tipo_entrega = $data['tipo_entrega'] ?? 'sucursal'; // 'sucursal' o 'envio'
@@ -95,13 +95,19 @@ try {
         $numero_serie = !empty($data['numero_serie']) ? $data['numero_serie'] : null;
         $imei = !empty($data['imei']) ? $data['imei'] : null;
 
+        // Datos de envío a domicilio
+        $calle = trim($data['calle'] ?? '');
+        $manzana = trim($data['manzana'] ?? '');
+        $casa = trim($data['casa'] ?? '');
+        $barrio = trim($data['barrio'] ?? '');
+
         // Obtener costo estimado del servicio seleccionado
         $stmtServ = $conexion->prepare("SELECT costo FROM servicios WHERE servicios_id = ?");
         $stmtServ->execute([$servicio_id]);
         $servData = $stmtServ->fetch(PDO::FETCH_ASSOC);
         $total = $servData && isset($servData['costo']) ? $servData['costo'] : 50000.00;
 
-        // Manejo de imagen del equipo (si se sube por archivo o multipart)
+        // Manejo de imagen del equipo
         $imagenNombre = null;
         if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
             $fileTmpPath = $_FILES['imagen']['tmp_name'];
@@ -125,18 +131,18 @@ try {
         $equipo_id = $conexion->lastInsertId();
 
         // 2. Registrar la Orden de Reparación
-        // Estados: 1 = Pendiente. No se paga de entrada (pagado = 0), se asigna forma de pago por defecto (ej. 2 = Efectivo o 1)
         $codigo_seguridad = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $estados_or_id = 1; 
 
         $sqlOrd = "INSERT INTO reparacion_orden 
             (equipo_id, usuario_id, empleado_id, tecnico_id, servicios_id, diagnostico_cliente, estados_or_id, estado_general_id, formas_pago_id, total, monto_seña, tipo_entrega, pagado, codigo_seguridad, imagen) 
-            VALUES (?, ?, NULL, NULL, ?, ?, ?, 1, 2, ?, 0.00, ?, 0, ?, ?)";
+            VALUES (?, ?, ?, NULL, ?, ?, ?, 1, 2, ?, 0.00, ?, 0, ?, ?)";
         
         $stmtOrd = $conexion->prepare($sqlOrd);
         $stmtOrd->execute([
             $equipo_id,
             $usuario_id,
+            $empleado_id,
             $servicio_id,
             $diagnostico_cliente,
             $estados_or_id,
@@ -147,16 +153,25 @@ try {
         ]);
         $reparacion_orden_id = $conexion->lastInsertId();
 
-        // 3. Si el usuario seleccionó envío a domicilio, registrar en envíos de sucursal
+// 3. Registrar directamente en `detalle_envios_sucursal` vinculado a `reparacion_orden_id`
         if ($tipo_entrega === 'envio') {
-            $stmtEnv = $conexion->prepare("INSERT INTO envios_sucursal (usuario_id, fecha_pedido, estado_general_id) VALUES (?, NOW(), 1)");
-            $stmtEnv->execute([$usuario_id]);
-            $envios_sucursal_id = $conexion->lastInsertId();
+            $obsExtra = trim($data['observaciones'] ?? '');
+            $observacionEnvio = "Envío de equipo - Orden #" . $reparacion_orden_id . ($obsExtra !== '' ? " | " . $obsExtra : "");
 
-            $stmtDetEnv = $conexion->prepare("INSERT INTO detalle_envios_sucursal (envios_sucursal_id, productos_id, cantidad, observaciones, estado_general_id) VALUES (?, 1, 1, ?, 1)");
-            $stmtDetEnv->execute([$envios_sucursal_id, "Envío de equipo - Orden #" . $reparacion_orden_id]);
+            $stmtDetEnv = $conexion->prepare("
+                INSERT INTO detalle_envios_sucursal 
+                (productos_id, cantidad, observaciones, estado_general_id, calle, manzana, casa, barrio, fecha_hora_pedido, reparacion_orden_id) 
+                VALUES (1, 1, ?, 1, ?, ?, ?, ?, NOW(), ?)
+            ");
+            $stmtDetEnv->execute([
+                $observacionEnvio,
+                $calle,
+                $manzana,
+                $casa,
+                $barrio,
+                $reparacion_orden_id
+            ]);
         }
-
         $conexion->commit();
 
         echo json_encode([
@@ -167,7 +182,6 @@ try {
             "message" => "Orden registrada con éxito. El técnico se comunicará con el diagnóstico."
         ], JSON_UNESCAPED_UNICODE);
         exit();
-
     }
 
 } catch (Exception $e) {

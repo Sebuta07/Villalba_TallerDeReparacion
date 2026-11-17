@@ -13,6 +13,10 @@ export default function ProductosScreen() {
   const [filtrados, setFiltrados] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
   
+  // Estados para el filtrado por categorías dinámicas[cite: 2]
+  const [categorias, setCategorias] = useState<string[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas');
+  
   const [prodSeleccionado, setProdSeleccionado] = useState<any>(null);
   const [precio, setPrecio] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -32,19 +36,39 @@ export default function ProductosScreen() {
         if (data.success) {
           setProductos(data.productos);
           setFiltrados(data.productos);
+
+          // Extraer categorías únicas para las pestañas de filtrado[cite: 2]
+          const cats = data.productos.map((p: any) => p.categoria || 'General');
+          setCategorias(['Todas', ...Array.from(new Set(cats))]);
         }
       })
       .catch(() => Alert.alert('Error', 'No se pudo conectar con el servidor.'));
   };
 
+  // Filtrado combinado de Buscador por Nombre + Pestaña de Categoría[cite: 2]
+  const aplicarFiltros = (textoBusqueda: string, categoriaCat: string) => {
+    let resultado = productos;
+
+    if (categoriaCat !== 'Todas') {
+      resultado = resultado.filter(p => (p.categoria || 'General') === categoriaCat);
+    }
+
+    if (textoBusqueda.trim()) {
+      const query = textoBusqueda.toLowerCase();
+      resultado = resultado.filter(p => p.nombre.toLowerCase().includes(query));
+    }
+
+    setFiltrados(resultado);
+  };
+
   const handleBuscar = (texto: string) => {
     setBusqueda(texto);
-    if (!texto.trim()) {
-      setFiltrados(productos);
-      return;
-    }
-    const query = texto.toLowerCase();
-    setFiltrados(productos.filter(p => p.nombre.toLowerCase().includes(query)));
+    aplicarFiltros(texto, categoriaSeleccionada);
+  };
+
+  const seleccionarCategoria = (cat: string) => {
+    setCategoriaSeleccionada(cat);
+    aplicarFiltros(busqueda, cat);
   };
 
   const guardarCambios = async () => {
@@ -97,7 +121,15 @@ export default function ProductosScreen() {
           usuario_id: comercioId
         })
       });
-      const json = await res.json();
+
+      const textoCrudo = await res.text();
+      let json;
+      try {
+        json = JSON.parse(textoCrudo);
+      } catch {
+        throw new Error("El servidor devolvió una respuesta no válida.");
+      }
+
       if (json.success) {
         Alert.alert('Éxito', 'Pedido de reposición registrado con éxito.');
         setModalVisible(false);
@@ -105,8 +137,8 @@ export default function ProductosScreen() {
       } else {
         Alert.alert('Error', json.message);
       }
-    } catch {
-      Alert.alert('Error', 'No se pudo conectar con el servidor.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'No se pudo conectar con el servidor.');
     }
   };
 
@@ -114,6 +146,7 @@ export default function ProductosScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Control de Inventario y Productos</Text>
 
+      {/* Buscador escrito por nombre */}
       <TextInput
         style={styles.inputBusqueda}
         placeholder="Buscar producto por nombre..."
@@ -121,6 +154,21 @@ export default function ProductosScreen() {
         value={busqueda}
         onChangeText={handleBuscar}
       />
+
+      {/* Pestañas de filtrado por categoría[cite: 2] */}
+      <ScrollView horizontal style={styles.categoriasScroll} showsHorizontalScrollIndicator={false}>
+        {categorias.map((cat, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[styles.chipCategoria, categoriaSeleccionada === cat && styles.chipCategoriaActiva]}
+            onPress={() => seleccionarCategoria(cat)}
+          >
+            <Text style={[styles.chipTexto, categoriaSeleccionada === cat && styles.chipTextoActivo]}>
+              {cat}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {prodSeleccionado && (
         <View style={styles.editBox}>
@@ -224,7 +272,12 @@ export default function ProductosScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F6FA', padding: 16 },
   title: { fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 12, textAlign: 'center' },
-  inputBusqueda: { backgroundColor: '#FFFFFF', color: '#0F172A', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 15, fontSize: 14, shadowColor: '#0F172A', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  inputBusqueda: { backgroundColor: '#FFFFFF', color: '#0F172A', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10, fontSize: 14, shadowColor: '#0F172A', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  categoriasScroll: { marginBottom: 15 },
+  chipCategoria: { backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#CBD5E1', height: 36, justifyContent: 'center' },
+  chipCategoriaActiva: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+  chipTexto: { color: '#334155', fontSize: 12, fontWeight: '600' },
+  chipTextoActivo: { color: '#FFFFFF', fontWeight: 'bold' },
   card: { backgroundColor: '#FFFFFF', padding: 14, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#0F172A', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
   cardTitle: { color: '#0F172A', fontWeight: 'bold', fontSize: 15, marginBottom: 2 },
   text: { color: '#475569', fontSize: 12, marginVertical: 1 },

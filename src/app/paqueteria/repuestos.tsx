@@ -8,16 +8,26 @@ export default function RepuestosScreen() {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { cargarPedidos(); }, []);
+  useEffect(() => {
+    cargarPedidos();
+  }, []);
 
   const cargarPedidos = async () => {
     try {
       setLoading(true);
       const res = await fetch(API_REPUESTOS);
-      const data = await res.json();
+      const textoCrudo = await res.text();
+      const data = JSON.parse(textoCrudo);
+
       if (data.success) {
-        const pendientes = data.pedidos.filter((p: any) => Number(p.estado_general_id) !== 2);
+        // Filtramos únicamente los que están pendientes (estado !== 'verificado')
+        const pendientes = data.pedidos.filter((p: any) => {
+          const est = p.estado ? p.estado.toLowerCase() : 'pendiente';
+          return est === 'pendiente';
+        });
         setPedidos(pendientes);
+      } else {
+        Alert.alert('Error', data.message || 'No se pudieron cargar los pedidos.');
       }
     } catch {
       Alert.alert('Error', 'No se pudo conectar con el servidor.');
@@ -36,7 +46,7 @@ export default function RepuestosScreen() {
       <tr style="background-color: ${index % 2 === 0 ? '#f9f9f9' : '#ffffff'};">
         <td style="padding: 8px; border-bottom: 1px solid #ddd;">${p.producto_nombre}</td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">${p.cantidad}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${p.usuario_nombre} ${p.usuario_apellido}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${p.observaciones || '-'}</td>
       </tr>
     `).join('');
 
@@ -58,7 +68,7 @@ export default function RepuestosScreen() {
               <tr>
                 <th>PRODUCTO</th>
                 <th>CANTIDAD</th>
-                <th>SOLICITANTE</th>
+                <th>OBSERVACIONES</th>
               </tr>
             </thead>
             <tbody>
@@ -76,7 +86,7 @@ export default function RepuestosScreen() {
     }
   };
 
-  const realizarControlYActualizarStock = async (item: any) => {
+  const realizarControlYActualizarStock = (item: any) => {
     Alert.alert(
       'Confirmar Control de Repuestos',
       `¿Se verificó la recepción de "${item.producto_nombre}" (Cantidad: ${item.cantidad})?`,
@@ -90,20 +100,28 @@ export default function RepuestosScreen() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  envios_sucursal_id: item.envios_sucursal_id,
+                  detalle_pedido_sucursales_id: item.detalle_pedido_sucursales_id,
                   productos_id: item.productos_id,
                   cantidad: item.cantidad
                 })
               });
-              const json = await res.json();
+
+              const textoCrudo = await res.text();
+              let json;
+              try {
+                json = JSON.parse(textoCrudo);
+              } catch {
+                throw new Error('Respuesta inválida del servidor.');
+              }
+
               if (json.success) {
                 Alert.alert('¡Stock Actualizado!', json.message);
-                cargarPedidos();
+                cargarPedidos(); // Recarga el listado y saca este pedido de pendientes
               } else {
                 Alert.alert('Error', json.message);
               }
-            } catch {
-              Alert.alert('Error', 'Falla de conexión con el servidor.');
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Falla de conexión con el servidor.');
             }
           }
         }
@@ -124,13 +142,13 @@ export default function RepuestosScreen() {
       ) : (
         <FlatList
           data={pedidos}
-          keyExtractor={(item) => item.envios_sucursal_id.toString()}
+          keyExtractor={(item) => item.detalle_pedido_sucursales_id.toString()}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={styles.prodName}>{item.producto_nombre}</Text>
                 <Text style={styles.text}>Cantidad: <Text style={styles.orange}>{item.cantidad} unidades</Text></Text>
-                <Text style={styles.text}>Solicitado por: {item.usuario_nombre} {item.usuario_apellido}</Text>
+                <Text style={styles.text}>Fecha: {item.fecha_hora_pedido}</Text>
                 {item.observaciones ? <Text style={styles.text}>Obs: {item.observaciones}</Text> : null}
               </View>
 

@@ -2,19 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { addToCart, getCartCount } from '../../store/cartStore';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.211/api_app';
+// ⚠️ REEMPLAZA ESTA URL CON TU DOMINIO ACTUAL DE NGROK (ej: https://xxxx-xx.ngrok-free.app)
+const API_BASE = `${process.env.EXPO_PUBLIC_API_URL}`;
 
 export default function ListadoProductosScreen() {
   const router = useRouter();
@@ -27,7 +29,6 @@ export default function ListadoProductosScreen() {
   const [catSeleccionada, setCatSeleccionada] = useState<number | null>(null);
   const [busqueda, setBusqueda] = useState('');
   
-  // Estado para llevar la cuenta global del carrito
   const [carritoCount, setCarritoCount] = useState(0);
   const [mensajeToast, setMensajeToast] = useState<string | null>(null);
 
@@ -40,36 +41,12 @@ export default function ListadoProductosScreen() {
     try {
       const res = await fetch(`${API_BASE}/cliente/listado_productos.php`);
       const json = await res.json();
-      setProductos(json.productos || []);
-      setCategorias(json.categorias || []);
+      if (json.estado === 'success') {
+        setProductos(json.productos || []);
+        setCategorias(json.categorias || []);
+      }
     } catch (e) {
-      // Datos de respaldo por si la API no está accesible temporalmente
-      setCategorias([
-        { id: 1, nombre: 'Repuestos' },
-        { id: 2, nombre: 'Accesorios' }
-      ]);
-      setProductos([
-        {
-          id: 1,
-          nombre: 'Módulo Display Samsung A04e',
-          descripcion: 'Pantalla táctil y LCD de alta calidad con marco incluido.',
-          precio_venta: 25000.00,
-          stock: 5,
-          categoria_id: 1,
-          categoria_nombre: 'Repuestos',
-          imagen: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=85'
-        },
-        {
-          id: 2,
-          nombre: 'Cable Carga Rápida Tipo C 3A',
-          descripcion: 'Cable mallado de alta resistencia de 1 metro.',
-          precio_venta: 4500.00,
-          stock: 15,
-          categoria_id: 2,
-          categoria_nombre: 'Accesorios',
-          imagen: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=85'
-        }
-      ]);
+      console.log('Error conectando a la API con ngrok:', e);
     } finally {
       setLoading(false);
     }
@@ -79,7 +56,6 @@ export default function ListadoProductosScreen() {
     addToCart(producto);
     setCarritoCount(getCartCount());
 
-    // Mostrar notificación flotante temporal
     setMensajeToast(`¡${producto.nombre} agregado!`);
     setTimeout(() => {
       setMensajeToast(null);
@@ -98,7 +74,7 @@ export default function ListadoProductosScreen() {
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color="#38BDF8" />
-        <Text style={styles.loaderText}>Cargando catálogo de productos...</Text>
+        <Text style={styles.loaderText}>Conectando con el servidor...</Text>
       </View>
     );
   }
@@ -113,7 +89,6 @@ export default function ListadoProductosScreen() {
           <Text style={styles.subtitle}>Componentes y accesorios del taller</Text>
         </View>
 
-        {/* BOTÓN ACCESO AL CARRITO */}
         <TouchableOpacity 
           style={styles.cartIconBtn} 
           onPress={() => router.push({ pathname: '/cliente/carrito' as any, params: { usuarioId: currentUsuarioId } })}
@@ -152,27 +127,33 @@ export default function ListadoProductosScreen() {
         )}
       </View>
 
-      {/* FILTROS POR CATEGORÍA */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, catSeleccionada === null && styles.filterChipActive]}
-          onPress={() => setCatSeleccionada(null)}
+      {/* FILTROS POR CATEGORÍA (DESLIZABLE HORIZONTAL) */}
+      <View style={{ maxHeight: 50, marginBottom: 12 }}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.filterRow}
         >
-          <Text style={[styles.filterChipText, catSeleccionada === null && styles.filterChipTextActive]}>
-            Todos
-          </Text>
-        </TouchableOpacity>
-        {categorias.map((cat) => (
           <TouchableOpacity
-            key={cat.id}
-            style={[styles.filterChip, catSeleccionada === cat.id && styles.filterChipActive]}
-            onPress={() => setCatSeleccionada(catSeleccionada === cat.id ? null : cat.id)}
+            style={[styles.filterChip, catSeleccionada === null && styles.filterChipActive]}
+            onPress={() => setCatSeleccionada(null)}
           >
-            <Text style={[styles.filterChipText, catSeleccionada === cat.id && styles.filterChipTextActive]}>
-              {cat.nombre}
+            <Text style={[styles.filterChipText, catSeleccionada === null && styles.filterChipTextActive]}>
+              Todos
             </Text>
           </TouchableOpacity>
-        ))}
+          {categorias.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={[styles.filterChip, catSeleccionada === cat.id && styles.filterChipActive]}
+              onPress={() => setCatSeleccionada(catSeleccionada === cat.id ? null : cat.id)}
+            >
+              <Text style={[styles.filterChipText, catSeleccionada === cat.id && styles.filterChipTextActive]}>
+                {cat.nombre}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* LISTADO DE PRODUCTOS */}
@@ -185,7 +166,7 @@ export default function ListadoProductosScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="cube-outline" size={48} color="#64748B" />
             <Text style={styles.emptyTitle}>No se encontraron productos</Text>
-            <Text style={styles.emptySub}>Intenta con otra búsqueda o categoría</Text>
+            <Text style={styles.emptySub}>Verifica la conexión o los registros en la base de datos</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -201,10 +182,9 @@ export default function ListadoProductosScreen() {
               <View style={styles.cardFooter}>
                 <View>
                   <Text style={styles.priceLabel}>Precio</Text>
-                  <Text style={styles.priceValue}>${Number(item.precio_venta || item.costo || 0).toLocaleString('es-AR')}</Text>
+                  <Text style={styles.priceValue}>${Number(item.precio_venta || 0).toLocaleString('es-AR')}</Text>
                 </View>
 
-                {/* BOTÓN AGREGAR AUTOMÁTICAMENTE */}
                 <TouchableOpacity
                   style={styles.actionBtn}
                   onPress={() => agregarAlCarrito(item)}
@@ -249,8 +229,8 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    marginBottom: 12,
     gap: 8,
+    alignItems: 'center',
   },
   filterChip: {
     paddingHorizontal: 14,

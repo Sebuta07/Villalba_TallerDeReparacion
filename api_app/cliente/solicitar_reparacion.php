@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $categorias = $conexion->query("SELECT categoria_id as id, nombre FROM categorias_equipo WHERE estado_general_id = 1")->fetchAll(PDO::FETCH_ASSOC);
         $marcas = $conexion->query("SELECT marca_equipo_id as id, marcas_equipos as nombre FROM marcas_equipos WHERE estado_general_id = 1")->fetchAll(PDO::FETCH_ASSOC);
         $modelos = $conexion->query("SELECT modelo_equipo_id as id, modelo_equipos as nombre FROM modelo_equipos WHERE estado_general_id = 1")->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $servicio_id = $_GET['servicio_id'] ?? 3;
         $stmtServ = $conexion->prepare("SELECT servicios_id as id, nombre, costo FROM servicios WHERE servicios_id = ?");
         $stmtServ->execute([$servicio_id]);
@@ -39,6 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $modelo_equipo_id = $_POST['modelo_equipo_id'] ?? 1;
     $numero_serie = $_POST['numero_serie'] ?? null;
     $imei = $_POST['imei'] ?? null;
+
+    // Campos de dirección para envío a domicilio
+    $calle = $_POST['calle'] ?? '';
+    $manzana = $_POST['manzana'] ?? '';
+    $casa = $_POST['casa'] ?? '';
+    $barrio = $_POST['barrio'] ?? '';
+    $observaciones = $_POST['observaciones'] ?? '';
 
     if (!$usuario_id) {
         echo json_encode(["success" => false, "error" => "No se recibió el ID de usuario válido"]);
@@ -71,14 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtEq->execute([$marca_equipo_id, $categoria_equipo_id, $modelo_equipo_id, $numero_serie, $imei]);
         $equipo_id = $conexion->lastInsertId();
 
-        // 2. Registrar orden de reparación asignando el usuario_id correcto y NULL en empleado/técnico
+        // 2. Registrar orden de reparación
         $codigo_seguridad = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $estados_or_id = 1; // 1 = Pendiente
 
         $stmtOrd = $conexion->prepare("INSERT INTO reparacion_orden 
             (equipo_id, usuario_id, empleado_id, tecnico_id, servicios_id, diagnostico_cliente, estados_or_id, estado_general_id, formas_pago_id, total, tipo_entrega, pagado, codigo_seguridad, imagen) 
             VALUES (?, ?, NULL, NULL, ?, ?, ?, 1, 2, ?, ?, 0, ?, ?)");
-        
+
         $stmtOrd->execute([
             $equipo_id,
             $usuario_id,
@@ -91,15 +98,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $imagenNombre
         ]);
         $reparacion_orden_id = $conexion->lastInsertId();
-
-        // 3. Registrar en envíos de sucursal si corresponde
+// 3. Registrar envío con calle, manzana, casa, barrio y observaciones (con coordenadas)
         if ($tipo_entrega === 'envio') {
-            $stmtEnv = $conexion->prepare("INSERT INTO envios_sucursal (usuario_id, fecha_pedido, estado_general_id) VALUES (?, NOW(), 1)");
-            $stmtEnv->execute([$usuario_id]);
-            $envios_sucursal_id = $conexion->lastInsertId();
-
-            $stmtDetEnv = $conexion->prepare("INSERT INTO detalle_envios_sucursal (envios_sucursal_id, productos_id, cantidad, observaciones, estado_general_id) VALUES (?, 1, 1, ?, 1)");
-            $stmtDetEnv->execute([$envios_sucursal_id, "Envío de equipo - Orden #" . $reparacion_orden_id]);
+            $obsBase = trim($observaciones);
+            $obsCompleta = "Envío de equipo - Orden #" . $reparacion_orden_id . ($obsBase !== '' ? " | " . $obsBase : "");
+            $stmtDetEnv = $conexion->prepare("
+                INSERT INTO detalle_envios_sucursal 
+                (productos_id, cantidad, calle, manzana, casa, barrio, observaciones, estado_general_id, fecha_hora_pedido, reparacion_orden_id) 
+                VALUES (1, 1, ?, ?, ?, ?, ?, 1, NOW(), ?)
+            ");
+            $stmtDetEnv->execute([
+                $calle,
+                $manzana,
+                $casa,
+                $barrio,
+                $obsCompleta,
+                $reparacion_orden_id
+            ]);
         }
 
         $conexion->commit();

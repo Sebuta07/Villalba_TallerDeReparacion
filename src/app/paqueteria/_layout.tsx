@@ -20,9 +20,10 @@ export default function PaqueteriaLayout() {
 
   const opcionesMenu = [
     { label: 'Panel Principal', route: '/paqueteria' },
-    { label: 'Bandeja de Entrada / Calidad', route: '/paqueteria/bandeja' },
-    { label: 'Control de Envío al Cliente', route: '/paqueteria/envios' },
-    { label: 'Recepción y Alerta de Repuestos', route: '/paqueteria/repuestos' },
+    { label: 'Bandeja de Entrada', route: '/paqueteria/bandeja' },
+    { label: 'Control de Envío', route: '/paqueteria/envios' },
+    { label: 'Retiro a Domicilio', route: '/paqueteria/retiros' },
+    { label: 'Repuesto de Stock', route: '/paqueteria/repuestos' },
   ];
 
   const navegarA = (ruta: string) => {

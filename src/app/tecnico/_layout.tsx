@@ -20,8 +20,8 @@ export default function TecnicoLayout() {
 
   const opcionesMenu = [
     { label: 'Panel Principal', route: '/tecnico' },
-    { label: 'Mis Reparaciones', route: '/tecnico/listado_reparaciones' },
     { label: 'Ordenes de Reparación', route: '/tecnico/tomar_orden' },
+    { label: 'Mis Reparaciones', route: '/tecnico/listado_reparaciones' },
     { label: 'Chat con Cliente', route: '/tecnico/notas' },
     { label: 'Evaluar Orden', route: '/tecnico/evaluar_orden' },
   ];

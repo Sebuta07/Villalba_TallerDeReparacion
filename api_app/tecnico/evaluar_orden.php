@@ -1,5 +1,9 @@
 <?php
-ini_set('display_errors', 1);
+if (ob_get_length()) {
+    ob_clean();
+}
+
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
 header("Access-Control-Allow-Origin: *");
@@ -12,15 +16,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once __DIR__ . '/../conexion.php';
-if (!isset($conexion) && isset($pdo)) { $conexion = $pdo; }
+try {
+    require_once __DIR__ . '/../conexion.php';
+    if (!isset($conexion) && isset($pdo)) { $conexion = $pdo; }
+    if (!isset($conexion)) { throw new Exception("Error de conexión a la base de datos."); }
 
-$method = $_SERVER['REQUEST_METHOD'];
+    $method = $_SERVER['REQUEST_METHOD'];
 
-if ($method === 'GET') {
-    $tecnico_id = $_GET['tecnico_id'] ?? null;
+    if ($method === 'GET') {
+        $tecnico_id = $_GET['tecnico_id'] ?? null;
 
-    try {
+        // Mostrar órdenes pendientes o en proceso, permitiendo ver las asignadas al técnico o sin técnico
         $sql = "SELECT 
                     ro.reparacion_orden_id,
                     ro.usuario_id,
@@ -41,11 +47,11 @@ if ($method === 'GET') {
                 LEFT JOIN marcas_equipos me ON eq.marca_equipo_id = me.marca_equipo_id
                 LEFT JOIN modelo_equipos mo ON eq.modelo_equipo_id = mo.modelo_equipo_id
                 LEFT JOIN servicios s ON ro.servicios_id = s.servicios_id
-                WHERE ro.estados_or_id = 1"; // Se mantiene en pendientes
+                WHERE ro.estados_or_id IN (1, 2, 4)";
 
         $params = [];
         if ($tecnico_id) {
-            $sql .= " AND ro.tecnico_id = :tecnico_id";
+            $sql .= " AND (ro.tecnico_id = :tecnico_id OR ro.tecnico_id IS NULL)";
             $params[':tecnico_id'] = $tecnico_id;
         }
 
@@ -55,30 +61,26 @@ if ($method === 'GET') {
         $stmt->execute($params);
         $ordenes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(["success" => true, "ordenes" => $ordenes], JSON_UNESCAPED_UNICODE);
-        exit();
-    } catch (Exception $e) {
-        echo json_encode(["success" => false, "message" => "Error al obtener órdenes: " . $e->getMessage()]);
-        exit();
-    }
-}
-
-if ($method === 'POST') {
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!$data || !isset($data['reparacion_orden_id']) || !isset($data['diagnostico']) || !isset($data['total']) || !isset($data['monto_seña'])) {
-        echo json_encode(["success" => false, "message" => "Faltan datos requeridos"]);
+        echo json_encode(["success" => true, "ordenes" => $ordenes ?: []], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
-    try {
+    if ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || !isset($data['reparacion_orden_id']) || !isset($data['diagnostico']) || !isset($data['total']) || !isset($data['monto_seña'])) {
+            echo json_encode(["success" => false, "message" => "Faltan datos requeridos"]);
+            exit();
+        }
+
         $conexion->beginTransaction();
 
-        // Actualizamos el diagnóstico, total y seña, PERO NO cambiamos estados_or_id para que siga pendiente (estado 1)
+        // Actualizar diagnóstico, presupuesto, seña y opcionalmente autogestionar el técnico si estaba libre
         $sql = "UPDATE reparacion_orden 
                 SET diagnostico_cliente = :diag,
                     total = :tot,
-                    monto_seña = :sena
+                    monto_seña = :sena,
+                    estados_or_id = 2
                 WHERE reparacion_orden_id = :id";
                 
         $stmt = $conexion->prepare($sql);
@@ -91,11 +93,15 @@ if ($method === 'POST') {
 
         $conexion->commit();
         echo json_encode(["success" => true, "message" => "Evaluación registrada correctamente"]);
-    } catch (Exception $e) {
-        if ($conexion->inTransaction()) {
-            $conexion->rollBack();
-        }
-        echo json_encode(["success" => false, "message" => "Error al actualizar: " . $e->getMessage()]);
+        exit();
     }
+
+} catch (Exception $e) {
+    if (isset($conexion) && $conexion->inTransaction()) {
+        $conexion->rollBack();
+    }
+    http_response_code(500);
+    echo json_encode(["success" => false, "message" => "Error en el servidor: " . $e->getMessage()]);
+    exit();
 }
 ?>

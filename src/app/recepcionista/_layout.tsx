@@ -24,7 +24,7 @@ export default function RecepcionistaLayout() {
     { label: 'Listado de Servicio', route: '/recepcionista/servicios' },
     { label: 'Calculadora', route: '/recepcionista/calculadora' },
     { label: 'Listado Avance de Reparación', route: '/recepcionista/avance' },
-    { label: 'Entregar', route: '/recepcionista/entregas' }, // <-- Botón agregado aquí
+    { label: 'Entregar', route: '/recepcionista/entregas' },
   ];
 
   const navegarA = (ruta: string) => {

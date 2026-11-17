@@ -6,11 +6,16 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . '/../conexion.php';
 
 try {
+    // Detectar dinámicamente si es HTTP o HTTPS y el host actual (funciona con localhost, IP local y ngrok)
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'];
+    $baseUrl = "$protocol://$host/api_app";
+
     // 1. Obtener categorías activas de productos
     $stmtCat = $conexion->query("SELECT categoria_productos_id as id, nombre FROM categorias_productos WHERE estado_general_id = 1");
     $categorias = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Obtener productos activos haciendo JOIN con su categoría (corregido sin la 's' extra)
+    // 2. Obtener productos activos haciendo JOIN con su categoría
     $sql = "SELECT 
                 p.productos_id as id,
                 p.nombre,
@@ -27,12 +32,12 @@ try {
     $stmtProd = $conexion->query($sql);
     $productos = $stmtProd->fetchAll(PDO::FETCH_ASSOC);
 
-    // Formatear tipos de datos y rutas de imágenes
+    // Formatear tipos de datos y rutas dinámicas de imágenes
     foreach ($productos as &$prod) {
         $prod['precio_venta'] = (float)$prod['precio_venta'];
         $prod['stock'] = (int)$prod['stock'];
         $prod['imagen'] = !empty($prod['imagen']) 
-            ? 'http://192.168.1.211/api_app/uploads/productos/' . $prod['imagen'] 
+            ? "$baseUrl/uploads/productos/" . $prod['imagen'] 
             : 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=85';
     }
 

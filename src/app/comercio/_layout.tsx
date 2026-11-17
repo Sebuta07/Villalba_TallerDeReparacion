@@ -23,6 +23,7 @@ export default function ComercioLayout() {
     { label: 'Órdenes de Reparación', route: '/comercio/ordenes' },
     { label: 'Control de Inventario', route: '/comercio/productos' },
     { label: 'Pedidos de Reposición', route: '/comercio/reposicion' },
+    { label: 'Lista de Ventas', route: '/comercio/ventas' },
   ];
 
   const navegarA = (ruta: string) => {
