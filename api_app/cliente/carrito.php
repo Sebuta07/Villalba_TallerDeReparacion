@@ -164,7 +164,7 @@ if ($method === 'POST') {
             $stmtStock->execute([$cantidad, $producto_id]);
         }
 
-        // 3. Si es envío a domicilio, guardar dirección y coordenadas en `detalle_envios_sucursal`
+        // 3. Si es envío a domicilio, guardar dirección y datos en `detalle_envios_sucursal`
         if ($tipo_entrega === 'envio') {
             foreach ($items as $item) {
                 $producto_id = $item['id'];
@@ -173,8 +173,8 @@ if ($method === 'POST') {
 
                 $stmtDetEnv = $conexion->prepare("
                     INSERT INTO detalle_envios_sucursal 
-                    (envios_sucursal_id, productos_id, cantidad, calle, manzana, casa, barrio, observaciones, estado_general_id) 
-                    VALUES (0, ?, ?, ?, ?, ?, ?, ?, 1)
+                    (productos_id, cantidad, calle, manzana, casa, barrio, observaciones, estado_general_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
                 ");
                 $stmtDetEnv->execute([$producto_id, $cantidad, $calle, $manzana, $casa, $barrio, $obsEnvio]);
             }

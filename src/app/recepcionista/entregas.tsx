@@ -122,7 +122,7 @@ export default function EntregasScreen() {
       try {
         json = JSON.parse(textResponse);
       } catch (e) {
-        Alert.alert('Error', 'Respuesta no válida del servidor: ' + textResponse);
+        Alert.alert('Error', 'Respuesta no válida del servidor.');
         return;
       }
 
@@ -159,7 +159,7 @@ export default function EntregasScreen() {
       try {
         json = JSON.parse(textResponse);
       } catch (e) {
-        Alert.alert('Error Backend', textResponse);
+        Alert.alert('Error Backend', 'Hubo un error al confirmar la entrega.');
         return;
       }
 
@@ -179,21 +179,25 @@ export default function EntregasScreen() {
     }
   };
 
+  const formatMoneda = (monto: number | string) => {
+    return `$ ${Number(monto || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Entrega de Equipos</Text>
       </View>
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#8696A0" style={{ marginRight: 8 }} />
+        <Ionicons name="search" size={20} color="#64748B" style={{ marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar por DNI o Código..."
-          placeholderTextColor="#8696A0"
+          placeholderTextColor="#94A3B8"
           value={busqueda}
           onChangeText={(texto) => { setBusqueda(texto); cargarEntregas(texto); }}
         />
@@ -203,7 +207,8 @@ export default function EntregasScreen() {
         data={ordenes}
         keyExtractor={(item) => item.reparacion_orden_id.toString()}
         contentContainerStyle={styles.listContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => cargarEntregas(busqueda)} tintColor="#00A884" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => cargarEntregas(busqueda)} tintColor="#2563EB" />}
+        ListEmptyComponent={<Text style={styles.emptyText}>No se encontraron entregas pendientes.</Text>}
         renderItem={({ item }) => {
           const estaExpandido = ordenExpandidaId === item.reparacion_orden_id;
 
@@ -215,7 +220,7 @@ export default function EntregasScreen() {
             >
               <View style={styles.cardHeader}>
                 <Text style={styles.ordenId}>Orden #{item.reparacion_orden_id}</Text>
-                <Ionicons name={estaExpandido ? "chevron-up" : "chevron-down"} size={20} color="#00A884" />
+                <Ionicons name={estaExpandido ? "chevron-up" : "chevron-down"} size={20} color="#2563EB" />
               </View>
               
               <Text style={styles.clienteNombre}>{item.cliente_nombre} {item.cliente_apellido}</Text>
@@ -236,9 +241,13 @@ export default function EntregasScreen() {
                     <Text style={styles.codigoValue}>{item.codigo_seguridad || '----'}</Text>
                   </View>
 
-                  <Text style={styles.precioSaldo}>Saldo Pendiente: ${item.saldo_pendiente}</Text>
+                  <View style={styles.saldoBox}>
+                    <Text style={styles.saldoLabel}>Saldo Pendiente:</Text>
+                    <Text style={styles.precioSaldo}>{formatMoneda(item.saldo_pendiente)}</Text>
+                  </View>
 
                   <TouchableOpacity style={styles.btnEntregar} onPress={() => abrirModalEntrega(item)}>
+                    <Ionicons name="cash-outline" size={18} color="#FFF" style={{ marginRight: 6 }} />
                     <Text style={styles.btnEntregarText}>Procesar Cobro y Entrega</Text>
                   </TouchableOpacity>
                 </View>
@@ -248,6 +257,7 @@ export default function EntregasScreen() {
         }}
       />
 
+      {/* MODAL DE PAGOS */}
       <Modal visible={!!ordenSeleccionada} transparent animationType="fade" onRequestClose={() => { setOrdenSeleccionada(null); setUrlQr(null); }}>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
@@ -255,12 +265,12 @@ export default function EntregasScreen() {
             
             {urlQr ? (
               <View style={{ alignItems: 'center', marginVertical: 10 }}>
-                <Text style={{ color: '#00A884', fontWeight: 'bold', marginBottom: 12, textAlign: 'center', fontSize: 14 }}>
+                <Text style={{ color: '#2563EB', fontWeight: 'bold', marginBottom: 12, textAlign: 'center', fontSize: 14 }}>
                   Escaneá el código QR con Mercado Pago:
                 </Text>
                 <Image 
                   source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(urlQr)}` }} 
-                  style={{ width: 210, height: 210, backgroundColor: '#FFF', borderRadius: 8, padding: 10 }} 
+                  style={{ width: 210, height: 210, backgroundColor: '#FFF', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#E2E8F0' }} 
                 />
                 <TouchableOpacity 
                   style={[styles.btnModalCancel, { marginTop: 15, width: '100%' }]} 
@@ -277,10 +287,10 @@ export default function EntregasScreen() {
                 </TouchableOpacity>
 
                 <View style={{ marginVertical: 10 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ color: '#E9EDEF', fontSize: 13, fontWeight: 'bold' }}>Métodos Locales:</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{ color: '#0F172A', fontSize: 13, fontWeight: 'bold' }}>Métodos Locales:</Text>
                     <TouchableOpacity onPress={agregarMetodoPago}>
-                      <Text style={{ color: '#00A884', fontSize: 12, fontWeight: 'bold' }}>+ Agregar Método</Text>
+                      <Text style={{ color: '#2563EB', fontSize: 12, fontWeight: 'bold' }}>+ Agregar Método</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -290,24 +300,24 @@ export default function EntregasScreen() {
                         <Picker
                           selectedValue={String(pago.forma_pago_id)}
                           onValueChange={(val) => actualizarPago(index, 'forma_pago_id', val)}
-                          style={{ color: '#FFF', height: 40 }}
+                          style={{ color: '#0F172A', height: 44 }}
                         >
                           {formasPagoDisponibles.map((fp) => (
-                            <Picker.Item key={fp.formas_pago_id} label={fp.forma} value={String(fp.formas_pago_id)} color="#000" />
+                            <Picker.Item key={fp.formas_pago_id} label={fp.forma} value={String(fp.formas_pago_id)} />
                           ))}
                         </Picker>
                       </View>
                       <TextInput
                         style={styles.inputMonto}
                         placeholder="Monto"
-                        placeholderTextColor="#8696A0"
+                        placeholderTextColor="#94A3B8"
                         keyboardType="numeric"
                         value={String(pago.monto)}
                         onChangeText={(val) => actualizarPago(index, 'monto', val)}
                       />
                       {pagosSeleccionados.length > 1 && (
-                        <TouchableOpacity onPress={() => eliminarMetodoPago(index)} style={{ justifyContent: 'center', paddingLeft: 6 }}>
-                          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                        <TouchableOpacity onPress={() => eliminarMetodoPago(index)} style={{ justifyContent: 'center', paddingLeft: 8 }}>
+                          <Ionicons name="trash" size={20} color="#DC2626" />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -315,7 +325,7 @@ export default function EntregasScreen() {
                 </View>
 
                 {procesandoEntrega ? (
-                  <ActivityIndicator size="large" color="#00A884" style={{ marginVertical: 20 }} />
+                  <ActivityIndicator size="large" color="#2563EB" style={{ marginVertical: 20 }} />
                 ) : (
                   <View style={styles.modalActions}>
                     <TouchableOpacity style={styles.btnModalCancel} onPress={() => { setOrdenSeleccionada(null); setUrlQr(null); }}>
@@ -336,40 +346,43 @@ export default function EntregasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B141A' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2C34', padding: 16 },
+  container: { flex: 1, backgroundColor: '#F4F6FA' },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   backBtn: { marginRight: 10 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#202C33', margin: 16, borderRadius: 10, paddingHorizontal: 12, height: 44 },
-  searchInput: { flex: 1, color: '#E9EDEF', fontSize: 14 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', margin: 16, borderRadius: 10, paddingHorizontal: 14, height: 48, borderWidth: 1, borderColor: '#CBD5E1' },
+  searchInput: { flex: 1, color: '#0F172A', fontSize: 14 },
   listContainer: { paddingHorizontal: 16, paddingBottom: 20 },
-  card: { backgroundColor: '#111B21', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#222D34' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  ordenId: { color: '#00A884', fontSize: 13, fontWeight: 'bold' },
-  clienteNombre: { color: '#E9EDEF', fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
-  detailText: { color: '#94A3B8', fontSize: 13 },
-  detailsContainer: { marginTop: 10 },
-  divider: { height: 1, backgroundColor: '#222D34', marginVertical: 8 },
-  infoTitle: { color: '#00A884', fontSize: 12, fontWeight: 'bold', marginBottom: 6 },
-  infoText: { color: '#8696A0', fontSize: 12, marginBottom: 2 },
-  infoValue: { color: '#FFF', fontWeight: '500' },
-  codigoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2C34', padding: 10, borderRadius: 8, marginVertical: 10, borderWidth: 1, borderColor: '#334155' },
-  codigoLabel: { color: '#E9EDEF', fontSize: 13, flex: 1 },
-  codigoValue: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold', letterSpacing: 2 },
-  precioSaldo: { color: '#EF4444', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-  btnEntregar: { backgroundColor: '#00A884', padding: 12, borderRadius: 8, alignItems: 'center' },
-  btnEntregarText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 20 },
-  modalCard: { backgroundColor: '#111B21', borderRadius: 14, padding: 20, borderWidth: 1, borderColor: '#222D34' },
-  modalTitle: { color: '#E9EDEF', fontSize: 17, fontWeight: 'bold', marginBottom: 12 },
-  btnMercadoPago: { backgroundColor: '#009EE3', flexDirection: 'row', padding: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  btnMpText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
-  pagoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  pickerContainer: { flex: 2, backgroundColor: '#1F2C34', borderRadius: 8, marginRight: 8, overflow: 'hidden' },
-  inputMonto: { flex: 1, backgroundColor: '#1F2C34', color: '#FFF', paddingHorizontal: 10, height: 40, borderRadius: 8 },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  btnModalCancel: { flex: 1, backgroundColor: '#334155', padding: 10, borderRadius: 8, alignItems: 'center' },
-  btnModalCancelText: { color: '#FFF', fontWeight: 'bold' },
-  btnModalConfirm: { flex: 1.5, backgroundColor: '#00A884', padding: 10, borderRadius: 8, alignItems: 'center' },
-  btnModalConfirmText: { color: '#FFF', fontWeight: 'bold' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#0F172A', shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  ordenId: { color: '#2563EB', fontSize: 14, fontWeight: 'bold' },
+  clienteNombre: { color: '#0F172A', fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  detailText: { color: '#64748B', fontSize: 13 },
+  detailsContainer: { marginTop: 12 },
+  divider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 10 },
+  infoTitle: { color: '#334155', fontSize: 13, fontWeight: 'bold', marginBottom: 8 },
+  infoText: { color: '#64748B', fontSize: 12, marginBottom: 4 },
+  infoValue: { color: '#0F172A', fontWeight: '500' },
+  codigoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 8, marginVertical: 12, borderWidth: 1, borderColor: '#FDE68A' },
+  codigoLabel: { color: '#B45309', fontSize: 13, flex: 1, fontWeight: '600' },
+  codigoValue: { color: '#B45309', fontSize: 16, fontWeight: '900', letterSpacing: 2 },
+  saldoBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  saldoLabel: { color: '#334155', fontSize: 14, fontWeight: '600' },
+  precioSaldo: { color: '#DC2626', fontSize: 18, fontWeight: 'bold' },
+  btnEntregar: { backgroundColor: '#10B981', padding: 14, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  btnEntregarText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  emptyText: { color: '#64748B', fontSize: 13, textAlign: 'center', marginTop: 20, fontStyle: 'italic' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(7, 16, 38, 0.5)', justifyContent: 'center', padding: 20 },
+  modalCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 24, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#0F172A', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+  modalTitle: { color: '#0F172A', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  btnMercadoPago: { backgroundColor: '#009EE3', flexDirection: 'row', padding: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  btnMpText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  pagoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  pickerContainer: { flex: 2, backgroundColor: '#F8FAFC', borderRadius: 8, marginRight: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#CBD5E1', height: 44, justifyContent: 'center' },
+  inputMonto: { flex: 1, backgroundColor: '#F8FAFC', color: '#0F172A', paddingHorizontal: 12, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#CBD5E1' },
+  modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
+  btnModalCancel: { flex: 1, backgroundColor: '#F1F5F9', padding: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#CBD5E1' },
+  btnModalCancelText: { color: '#334155', fontWeight: 'bold', fontSize: 14 },
+  btnModalConfirm: { flex: 1.5, backgroundColor: '#2563EB', padding: 12, borderRadius: 8, alignItems: 'center' },
+  btnModalConfirmText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
 });

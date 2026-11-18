@@ -11,26 +11,48 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { addToCart, getCartCount } from '../../store/cartStore';
 
-// ⚠️ REEMPLAZA ESTA URL CON TU DOMINIO ACTUAL DE NGROK (ej: https://xxxx-xx.ngrok-free.app)
-const API_BASE = `${process.env.EXPO_PUBLIC_API_URL}`;
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.211/api_app';
+const UPLOADS_PRODUCTOS_BASE = `${API_BASE}/uploads/productos`;
+
+function resolverImagenProducto(imagen?: string | null): string {
+  if (!imagen || !imagen.trim()) return `${UPLOADS_PRODUCTOS_BASE}/logo.png`;
+  const trimmed = imagen.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const cleanFile = trimmed.replace(/^\/?(api_app\/)?uploads\/productos\//i, '');
+  return `${UPLOADS_PRODUCTOS_BASE}/${cleanFile}`;
+}
 
 export default function ListadoProductosScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const currentUsuarioId = params.usuarioId ? Number(params.usuarioId) : 3;
 
+  // Rescatar categoría y búsqueda si vienen desde Home
+  const categoriaInicial = params.categoriaId ? Number(params.categoriaId) : null;
+  const busquedaInicial = typeof params.busqueda === 'string' ? params.busqueda : '';
+
   const [loading, setLoading] = useState(true);
   const [productos, setProductos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
-  const [catSeleccionada, setCatSeleccionada] = useState<number | null>(null);
-  const [busqueda, setBusqueda] = useState('');
-  
+  const [catSeleccionada, setCatSeleccionada] = useState<number | null>(categoriaInicial);
+  const [busqueda, setBusqueda] = useState(busquedaInicial);
+
   const [carritoCount, setCarritoCount] = useState(0);
   const [mensajeToast, setMensajeToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCatSeleccionada(params.categoriaId ? Number(params.categoriaId) : null);
+  }, [params.categoriaId]);
+
+  useEffect(() => {
+    if (typeof params.busqueda === 'string') {
+      setBusqueda(params.busqueda);
+    }
+  }, [params.busqueda]);
 
   useEffect(() => {
     fetchProductos();
@@ -46,7 +68,7 @@ export default function ListadoProductosScreen() {
         setCategorias(json.categorias || []);
       }
     } catch (e) {
-      console.log('Error conectando a la API con ngrok:', e);
+      console.log('Error conectando a la API:', e);
     } finally {
       setLoading(false);
     }
@@ -65,8 +87,9 @@ export default function ListadoProductosScreen() {
   const productosFiltrados = productos.filter((prod) => {
     const coincideTexto =
       prod.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      prod.descripcion.toLowerCase().includes(busqueda.toLowerCase());
-    const coincideCat = catSeleccionada === null || prod.categoria_id === catSeleccionada;
+      (prod.descripcion || '').toLowerCase().includes(busqueda.toLowerCase());
+    const coincideCat =
+      catSeleccionada === null || Number(prod.categoria_id) === Number(catSeleccionada);
     return coincideTexto && coincideCat;
   });
 
@@ -81,7 +104,6 @@ export default function ListadoProductosScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      
       {/* CABECERA */}
       <View style={styles.header}>
         <View>
@@ -89,9 +111,11 @@ export default function ListadoProductosScreen() {
           <Text style={styles.subtitle}>Componentes y accesorios del taller</Text>
         </View>
 
-        <TouchableOpacity 
-          style={styles.cartIconBtn} 
-          onPress={() => router.push({ pathname: '/cliente/carrito' as any, params: { usuarioId: currentUsuarioId } })}
+        <TouchableOpacity
+          style={styles.cartIconBtn}
+          onPress={() =>
+            router.push({ pathname: '/cliente/carrito' as any, params: { usuarioId: currentUsuarioId } })
+          }
         >
           <Ionicons name="cart-outline" size={22} color="#38BDF8" />
           {carritoCount > 0 && (
@@ -129,11 +153,7 @@ export default function ListadoProductosScreen() {
 
       {/* FILTROS POR CATEGORÍA (DESLIZABLE HORIZONTAL) */}
       <View style={{ maxHeight: 50, marginBottom: 12 }}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={styles.filterRow}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           <TouchableOpacity
             style={[styles.filterChip, catSeleccionada === null && styles.filterChipActive]}
             onPress={() => setCatSeleccionada(null)}
@@ -142,17 +162,20 @@ export default function ListadoProductosScreen() {
               Todos
             </Text>
           </TouchableOpacity>
-          {categorias.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[styles.filterChip, catSeleccionada === cat.id && styles.filterChipActive]}
-              onPress={() => setCatSeleccionada(catSeleccionada === cat.id ? null : cat.id)}
-            >
-              <Text style={[styles.filterChipText, catSeleccionada === cat.id && styles.filterChipTextActive]}>
-                {cat.nombre}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {categorias.map((cat) => {
+            const activo = Number(catSeleccionada) === Number(cat.id);
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.filterChip, activo && styles.filterChipActive]}
+                onPress={() => setCatSeleccionada(activo ? null : Number(cat.id))}
+              >
+                <Text style={[styles.filterChipText, activo && styles.filterChipTextActive]}>
+                  {cat.nombre}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
@@ -166,29 +189,36 @@ export default function ListadoProductosScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="cube-outline" size={48} color="#64748B" />
             <Text style={styles.emptyTitle}>No se encontraron productos</Text>
-            <Text style={styles.emptySub}>Verifica la conexión o los registros en la base de datos</Text>
+            <Text style={styles.emptySub}>No hay productos cargados para esta categoría o búsqueda</Text>
           </View>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image source={{ uri: item.imagen }} style={styles.cardImage} resizeMode="cover" />
+            <Image
+              source={{ uri: resolverImagenProducto(item.imagen) }}
+              style={styles.cardImage}
+              resizeMode="cover"
+            />
             <View style={styles.cardBody}>
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryBadgeText}>{(item.categoria_nombre || 'PRODUCTO').toUpperCase()}</Text>
+                <Text style={styles.categoryBadgeText}>
+                  {(item.categoria_nombre || 'PRODUCTO').toUpperCase()}
+                </Text>
               </View>
               <Text style={styles.cardTitle}>{item.nombre}</Text>
-              <Text style={styles.cardDesc} numberOfLines={2}>{item.descripcion}</Text>
+              <Text style={styles.cardDesc} numberOfLines={2}>
+                {item.descripcion}
+              </Text>
 
               <View style={styles.cardFooter}>
                 <View>
                   <Text style={styles.priceLabel}>Precio</Text>
-                  <Text style={styles.priceValue}>${Number(item.precio_venta || 0).toLocaleString('es-AR')}</Text>
+                  <Text style={styles.priceValue}>
+                    ${Number(item.precio_venta || 0).toLocaleString('es-AR')}
+                  </Text>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => agregarAlCarrito(item)}
-                >
+                <TouchableOpacity style={styles.actionBtn} onPress={() => agregarAlCarrito(item)}>
                   <Text style={styles.actionBtnText}>AGREGAR</Text>
                   <Ionicons name="cart" size={16} color="#fff" />
                 </TouchableOpacity>
@@ -208,10 +238,44 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   title: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', letterSpacing: 0.5 },
   subtitle: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
-  cartIconBtn: { backgroundColor: '#0D1E42', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.3)', position: 'relative' },
-  badge: { position: 'absolute', top: -5, right: -5, backgroundColor: '#2563EB', width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  cartIconBtn: {
+    backgroundColor: '#0D1E42',
+    padding: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#2563EB',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  toast: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: '#0D1E42', borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 99, shadowColor: '#000', shadowOpacity: 0.3, elevation: 5 },
+  toast: {
+    position: 'absolute',
+    top: 60,
+    alignSelf: 'center',
+    backgroundColor: '#0D1E42',
+    borderWidth: 1,
+    borderColor: '#10B981',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    zIndex: 99,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    elevation: 5,
+  },
   toastText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   searchContainer: {
     flexDirection: 'row',

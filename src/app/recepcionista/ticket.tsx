@@ -1,8 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Print from 'expo-print'; // Asegúrate de tener instalado expo-print
+import * as Print from 'expo-print';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TicketScreen() {
   const router = useRouter();
@@ -13,59 +12,74 @@ export default function TicketScreen() {
   const total = params.total || '0.00';
   const fecha = params.fecha || new Date().toLocaleString();
   
-  // Reconstruir el carrito desde los parámetros
   const carrito = params.carrito ? JSON.parse(params.carrito as string) : [];
 
   const imprimirTicket = async () => {
     try {
-      // Generar HTML simple para el ticket de impresión térmica o PDF
+      // HTML Blanco y Negro con letra Courier para impresión térmica 58mm/80mm
       const htmlContent = `
         <html>
           <head>
             <style>
-              body { font-family: monospace; padding: 20px; color: #000; }
-              h2, h3 { text-align: center; margin: 0; }
+              body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; font-size: 14px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .header h2 { margin: 0; font-size: 20px; font-weight: bold; }
+              .header p { margin: 2px 0; font-size: 12px; color: #333; }
               .center { text-align: center; }
-              .line { border-bottom: 1px dashed #000; margin: 10px 0; }
-              table { width: 100%; border-collapse: collapse; }
-              th, td { text-align: left; font-size: 12px; padding: 4px 0; }
-              .total { font-size: 14px; font-weight: bold; text-align: right; }
+              .line { border-bottom: 1px dashed #000; margin: 15px 0; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th, td { text-align: left; padding: 6px 0; }
+              th { border-bottom: 1px solid #000; font-weight: bold; }
+              .total-container { text-align: right; margin-top: 15px; }
+              .total { font-size: 18px; font-weight: bold; }
+              .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #333; }
             </style>
           </head>
           <body>
-            <h2>COMPROBANTE DE VENTA</h2>
-            <p class="center">Ticket N°: ${ventaId}</p>
-            <p class="center">Fecha: ${fecha}</p>
-            <p class="center">Empleado ID: ${empleadoId}</p>
+            <div class="header">
+              <h2>FÉNIX LAB</h2>
+              <p>Soluciones Tecnológicas</p>
+              <p>Ticket N°: ${ventaId}</p>
+              <p>Fecha: ${fecha}</p>
+              <p>Atendido por ID: ${empleadoId}</p>
+            </div>
+            
             <div class="line"></div>
+            
             <table>
               <thead>
                 <tr>
-                  <th>Cant. / Producto</th>
+                  <th>Cant / Producto</th>
                   <th style="text-align: right;">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
                 ${carrito.map((item: any) => `
                   <tr>
-                    <td>${item.cantidad}x ${item.nombre}<br/><small>$${item.precio_venta} c/u</small></td>
+                    <td>${item.cantidad}x ${item.nombre}<br/><small style="color: #555;">$${item.precio_venta} c/u</small></td>
                     <td style="text-align: right; vertical-align: top;">$${(Number(item.precio_venta) * item.cantidad).toFixed(2)}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
+            
             <div class="line"></div>
-            <p class="total">TOTAL: $${Number(total).toFixed(2)}</p>
+            
+            <div class="total-container">
+              <p class="total">TOTAL: $${Number(total).toFixed(2)}</p>
+            </div>
+            
             <div class="line"></div>
-            <p class="center">¡Gracias por su compra!</p>
+            
+            <div class="footer">
+              <p>¡Gracias por su compra!</p>
+              <p>Conserve este ticket para la garantía.</p>
+            </div>
           </body>
         </html>
       `;
 
-      // Invocar la función nativa de impresión de Expo
-      await Print.printAsync({
-        html: htmlContent
-      });
+      await Print.printAsync({ html: htmlContent });
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'No se pudo iniciar la impresión.');
@@ -75,41 +89,43 @@ export default function TicketScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.ticketCard}>
-        <Ionicons name="checkmark-circle" size={50} color="#4cd137" style={{ alignSelf: 'center', marginBottom: 10 }} />
+        <Ionicons name="checkmark-circle" size={56} color="#10B981" style={{ alignSelf: 'center', marginBottom: 16 }} />
         <Text style={styles.title}>¡Venta Exitosa!</Text>
-        <Text style={styles.subTitle}>Ticket #{ventaId}</Text>
-        <Text style={styles.fechaText}>{fecha}</Text>
+        <Text style={styles.subTitle}>Se ha generado el comprobante de pago</Text>
+        
+        <View style={styles.receiptContainer}>
+          <Text style={styles.receiptHeader}>TICKET #{ventaId}</Text>
+          <Text style={styles.fechaText}>{fecha}</Text>
 
-        <View style={styles.divider} />
+          <View style={styles.divider} />
 
-        <Text style={styles.sectionHeader}>Detalle de Productos</Text>
-        {carrito.map((item: any, index: number) => (
-          <View key={index} style={styles.itemRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.itemText}>{item.cantidad}x {item.nombre}</Text>
-              {item.observacionesItem ? <Text style={styles.obsText}>Obs: {item.observacionesItem}</Text> : null}
+          <Text style={styles.sectionHeader}>Detalle de la Operación</Text>
+          {carrito.map((item: any, index: number) => (
+            <View key={index} style={styles.itemRow}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={styles.itemText}>{item.cantidad}x {item.nombre}</Text>
+                {item.observacionesItem ? <Text style={styles.obsText}>Obs: {item.observacionesItem}</Text> : null}
+              </View>
+              <Text style={styles.itemPrecio}>${(Number(item.precio_venta) * item.cantidad).toFixed(2)}</Text>
             </View>
-            <Text style={styles.itemPrecio}>${(Number(item.precio_venta) * item.cantidad).toFixed(2)}</Text>
+          ))}
+
+          <View style={styles.divider} />
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total Facturado:</Text>
+            <Text style={styles.totalValue}>${Number(total).toFixed(2)}</Text>
           </View>
-        ))}
-
-        <View style={styles.divider} />
-
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total Pagado:</Text>
-          <Text style={styles.totalValue}>${Number(total).toFixed(2)}</Text>
         </View>
 
         <TouchableOpacity style={styles.btnPrint} onPress={imprimirTicket}>
-          <Ionicons name="print" size={18} color="#fff" />
-          <Text style={styles.btnPrintText}> Imprimir / Guardar Ticket</Text>
+          <Ionicons name="print-outline" size={20} color="#FFFFFF" />
+          <Text style={styles.btnPrintText}> Imprimir Ticket Térmico</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.btnVolver} 
-          onPress={() => router.replace('/recepcionista/registrar_venta')} // Ajusta la ruta de vuelta a tu panel principal o de ventas
-        >
-          <Text style={styles.btnVolverText}>Nueva Venta</Text>
+        {/* El botón de volver te envía de vuelta al Index limpio que hicimos antes */}
+        <TouchableOpacity style={styles.btnVolver} onPress={() => router.replace('/recepcionista/productos')}>
+          <Text style={styles.btnVolverText}>Ir al Panel Principal</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -117,22 +133,72 @@ export default function TicketScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 16 },
-  ticketCard: { backgroundColor: '#161616', borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#333', marginTop: 10 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
-  subTitle: { fontSize: 15, color: '#aaa', textAlign: 'center', marginTop: 4 },
-  fechaText: { fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 15 },
-  divider: { height: 1, backgroundColor: '#333', marginVertical: 15 },
-  sectionHeader: { fontSize: 14, fontWeight: 'bold', color: '#fff', marginBottom: 10 },
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  itemText: { color: '#ccc', fontSize: 13 },
-  obsText: { color: '#777', fontSize: 11, fontStyle: 'italic' },
-  itemPrecio: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  totalLabel: { fontSize: 16, color: '#aaa', fontWeight: 'bold' },
-  totalValue: { fontSize: 20, color: '#4cd137', fontWeight: 'bold' },
-  btnPrint: { backgroundColor: '#ff3333', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 12, borderRadius: 8, marginBottom: 10 },
-  btnPrintText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  btnVolver: { backgroundColor: '#262626', padding: 12, borderRadius: 8, alignItems: 'center' },
-  btnVolverText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#F4F6FA', padding: 16 },
+  ticketCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 16, 
+    padding: 24, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    marginTop: 20,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    alignItems: 'center'
+  },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
+  subTitle: { fontSize: 14, color: '#64748B', textAlign: 'center', marginTop: 4, marginBottom: 24 },
+  
+  receiptContainer: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+    marginBottom: 24
+  },
+  receiptHeader: { fontSize: 16, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
+  fechaText: { fontSize: 12, color: '#64748B', textAlign: 'center', marginTop: 4 },
+  
+  divider: { height: 1, backgroundColor: '#CBD5E1', marginVertical: 16, borderStyle: 'dashed' },
+  
+  sectionHeader: { fontSize: 13, fontWeight: 'bold', color: '#334155', marginBottom: 12 },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  itemText: { color: '#0F172A', fontSize: 13, fontWeight: '500' },
+  obsText: { color: '#64748B', fontSize: 11, fontStyle: 'italic', marginTop: 2 },
+  itemPrecio: { color: '#0F172A', fontSize: 14, fontWeight: 'bold' },
+  
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  totalLabel: { fontSize: 15, color: '#334155', fontWeight: 'bold' },
+  totalValue: { fontSize: 20, color: '#2563EB', fontWeight: 'bold' },
+  
+  btnPrint: { 
+    width: '100%',
+    backgroundColor: '#2563EB', 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    paddingVertical: 14, 
+    borderRadius: 10, 
+    marginBottom: 12,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  btnPrintText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold', marginLeft: 8 },
+  
+  btnVolver: { 
+    width: '100%',
+    backgroundColor: '#F1F5F9', 
+    paddingVertical: 14, 
+    borderRadius: 10, 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
+  },
+  btnVolverText: { color: '#334155', fontSize: 14, fontWeight: 'bold' },
 });

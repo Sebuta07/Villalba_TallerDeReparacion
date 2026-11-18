@@ -6,20 +6,81 @@ import {
   FlatList,
   Image,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.211/api_app';
+const UPLOADS_SERVICIOS_BASE = `${API_BASE}/uploads/servicios`;
+
+function resolverImagenServicio(imagen?: string | null): string | null {
+  if (!imagen || !imagen.trim()) return null;
+  const trimmed = imagen.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const cleanFile = trimmed.replace(/^\/?(api_app\/)?uploads\/servicios\//i, '');
+  return `${UPLOADS_SERVICIOS_BASE}/${cleanFile}`;
+}
+
+function ServicioCard({
+  item,
+  onSolicitar,
+}: {
+  item: any;
+  onSolicitar: (servicio: any) => void;
+}) {
+  const [imgError, setImgError] = useState(false);
+  const uri = resolverImagenServicio(item.imagen);
+
+  return (
+    <View style={styles.card}>
+      {uri && !imgError ? (
+        <Image
+          source={{ uri }}
+          style={styles.cardImage}
+          resizeMode="cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+          <Ionicons name="hardware-chip-outline" size={34} color="#38BDF8" />
+          <Text style={styles.placeholderText}>Imagen no disponible</Text>
+        </View>
+      )}
+
+      <View style={styles.cardBody}>
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryBadgeText}>{item.categoria_nombre.toUpperCase()}</Text>
+        </View>
+        <Text style={styles.cardTitle}>{item.nombre}</Text>
+        <Text style={styles.cardDesc}>{item.descripcion}</Text>
+
+        <View style={styles.cardFooter}>
+          <View>
+            <Text style={styles.priceLabel}>Precio estimado</Text>
+            <Text style={styles.priceValue}>${item.costo.toLocaleString('es-AR')}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => onSolicitar(item)}
+          >
+            <Text style={styles.actionBtnText}>PEDIR TURNO</Text>
+            <Ionicons name="calendar-outline" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export default function ListadoServiciosScreen() {
   const router = useRouter();
   const params = useGlobalSearchParams();
-  
-  // Rescatar de forma global el usuarioId de la sesión activa
+
   const usuarioId = params.usuarioId ? Number(params.usuarioId) : null;
 
   const [loading, setLoading] = useState(true);
@@ -47,7 +108,6 @@ export default function ListadoServiciosScreen() {
     }
   };
 
-  // Filtrado por búsqueda y categoría
   const serviciosFiltrados = servicios.filter((serv) => {
     const coincideTexto =
       serv.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -59,11 +119,11 @@ export default function ListadoServiciosScreen() {
   const solicitarServicio = (servicio: any) => {
     router.push({
       pathname: '/cliente/solicitar_reparacion' as any,
-      params: { 
-        usuarioId: usuarioId, // Propagamos el usuarioId hacia la pantalla de solicitud
-        servicioId: servicio.id, 
-        servicioNombre: servicio.nombre 
-      }
+      params: {
+        usuarioId: usuarioId,
+        servicioId: servicio.id,
+        servicioNombre: servicio.nombre,
+      },
     });
   };
 
@@ -101,27 +161,33 @@ export default function ListadoServiciosScreen() {
         )}
       </View>
 
-      {/* BOTONES DE FILTRO POR CATEGORÍA */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, catSeleccionada === null && styles.filterChipActive]}
-          onPress={() => setCatSeleccionada(null)}
+      {/* FILTRO HORIZONTAL DESLIZABLE POR CATEGORÍA */}
+      <View style={styles.filterWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
         >
-          <Text style={[styles.filterChipText, catSeleccionada === null && styles.filterChipTextActive]}>
-            Todos
-          </Text>
-        </TouchableOpacity>
-        {categorias.map((cat) => (
           <TouchableOpacity
-            key={cat.id}
-            style={[styles.filterChip, catSeleccionada === cat.id && styles.filterChipActive]}
-            onPress={() => setCatSeleccionada(catSeleccionada === cat.id ? null : cat.id)}
+            style={[styles.filterChip, catSeleccionada === null && styles.filterChipActive]}
+            onPress={() => setCatSeleccionada(null)}
           >
-            <Text style={[styles.filterChipText, catSeleccionada === cat.id && styles.filterChipTextActive]}>
-              {cat.nombre}
+            <Text style={[styles.filterChipText, catSeleccionada === null && styles.filterChipTextActive]}>
+              Todos
             </Text>
           </TouchableOpacity>
-        ))}
+          {categorias.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={[styles.filterChip, catSeleccionada === cat.id && styles.filterChipActive]}
+              onPress={() => setCatSeleccionada(catSeleccionada === cat.id ? null : cat.id)}
+            >
+              <Text style={[styles.filterChipText, catSeleccionada === cat.id && styles.filterChipTextActive]}>
+                {cat.nombre}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* LISTADO DE SERVICIOS */}
@@ -138,31 +204,7 @@ export default function ListadoServiciosScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={{ uri: item.imagen }} style={styles.cardImage} resizeMode="cover" />
-            <View style={styles.cardBody}>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryBadgeText}>{item.categoria_nombre.toUpperCase()}</Text>
-              </View>
-              <Text style={styles.cardTitle}>{item.nombre}</Text>
-              <Text style={styles.cardDesc}>{item.descripcion}</Text>
-
-              <View style={styles.cardFooter}>
-                <View>
-                  <Text style={styles.priceLabel}>Precio estimado</Text>
-                  <Text style={styles.priceValue}>${item.costo.toLocaleString('es-AR')}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => solicitarServicio(item)}
-                >
-                  <Text style={styles.actionBtnText}>PEDIR TURNO</Text>
-                  <Ionicons name="calendar-outline" size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+          <ServicioCard item={item} onSolicitar={solicitarServicio} />
         )}
       />
     </SafeAreaView>
@@ -189,15 +231,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(56, 189, 248, 0.25)',
   },
   searchInput: { flex: 1, color: '#FFFFFF', fontSize: 13 },
+  filterWrapper: {
+    marginBottom: 12,
+  },
   filterRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 12,
     gap: 8,
   },
   filterChip: {
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: '#0D1E42',
     borderWidth: 1,
@@ -219,6 +264,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   cardImage: { width: '100%', height: 130 },
+  cardImagePlaceholder: {
+    backgroundColor: '#0D1E42',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  placeholderText: { color: '#94A3B8', fontSize: 11, fontWeight: '600' },
   cardBody: { padding: 14 },
   categoryBadge: {
     backgroundColor: 'rgba(37, 99, 235, 0.2)',

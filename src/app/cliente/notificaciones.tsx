@@ -12,9 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// CAMBIA ESTA IP por tu IP local de XAMPP o 'http://localhost/taller_electronica/api'
-// Si usas emulador Android, puedes usar 'http://10.0.2.2/fenix_lab/api_app' (o la ruta de tu proyecto)
-const API_BASE= `${process.env.EXPO_PUBLIC_API_URL}`;
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.211/api_app';
 
 interface NotificacionItem {
   id: string;
@@ -29,12 +27,66 @@ interface NotificacionItem {
 
 type FiltroNotif = 'todas' | 'mensaje' | 'estado' | 'pagos';
 
+const NOTIFICACIONES_SIMULADAS: NotificacionItem[] = [
+  {
+    id: 'sim-1',
+    notificacion_id: null,
+    reparacion_orden_id: 35,
+    categoria: 'mensaje',
+    titulo: 'Nuevo mensaje de Ing. Marcos Villalba',
+    descripcion: 'Ya terminamos el test en bancada y el módulo OLED quedó calibrado al 100%.',
+    fecha: 'Hoy · 20:42',
+    leida: false,
+  },
+  {
+    id: 'sim-2',
+    notificacion_id: null,
+    reparacion_orden_id: 35,
+    categoria: 'tecnico',
+    titulo: 'Orden #35 tomada por el laboratorio',
+    descripcion: 'El técnico Ing. Marcos Villalba inició la microsoldadura y revisión térmica.',
+    fecha: 'Hoy · 18:15',
+    leida: false,
+  },
+  {
+    id: 'sim-3',
+    notificacion_id: null,
+    reparacion_orden_id: 30,
+    categoria: 'sena',
+    titulo: 'Pago verificado · Orden #30',
+    descripcion: 'Se registró el pago de $50.000,00 vía Débito. Comprobante validado en caja.',
+    fecha: 'Ayer · 16:30',
+    leida: false,
+  },
+  {
+    id: 'sim-4',
+    notificacion_id: null,
+    reparacion_orden_id: 29,
+    categoria: 'presupuesto',
+    titulo: 'Presupuesto oficial aprobado · Orden #29',
+    descripcion: 'Presupuesto total de $50.000,00 con 120 días de garantía escrita del taller.',
+    fecha: '13 Nov · 11:20',
+    leida: true,
+  },
+  {
+    id: 'sim-5',
+    notificacion_id: null,
+    reparacion_orden_id: 29,
+    categoria: 'logistica',
+    titulo: 'En preparación para despacho · Orden #29',
+    descripcion: 'Tu equipo fue embalado con protección antiestática para retiro/envío.',
+    fecha: '13 Nov · 09:05',
+    leida: true,
+  },
+];
+
 export default function NotificacionesClienteScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const usuarioId = params.usuarioId ? Number(params.usuarioId) : 16; // 16 o 2 para pruebas
+  const usuarioId = params.usuarioId ? Number(params.usuarioId) : 16;
 
   const [notificaciones, setNotificaciones] = useState<NotificacionItem[]>([]);
+  const [usandoSimulacion, setUsandoSimulacion] = useState(false);
   const [leidasLocales, setLeidasLocales] = useState<Record<string, boolean>>({});
   const [filtro, setFiltro] = useState<FiltroNotif>('todas');
   const [loading, setLoading] = useState(true);
@@ -43,16 +95,19 @@ export default function NotificacionesClienteScreen() {
   const cargarNotificaciones = useCallback(async () => {
     try {
       const urlFinal = `${API_BASE}/cliente/notificaciones.php?usuario_id=${usuarioId}`;
-      console.log('Consultando URL:', urlFinal);
-
       const res = await fetch(urlFinal);
       const json = await res.json();
-      
-      if (json.success && Array.isArray(json.notificaciones)) {
+
+      if (json.success && Array.isArray(json.notificaciones) && json.notificaciones.length > 0) {
         setNotificaciones(json.notificaciones);
+        setUsandoSimulacion(false);
+      } else {
+        setNotificaciones(NOTIFICACIONES_SIMULADAS);
+        setUsandoSimulacion(true);
       }
-    } catch (error) {
-      console.error('Error cargando notificaciones:', error);
+    } catch {
+      setNotificaciones(NOTIFICACIONES_SIMULADAS);
+      setUsandoSimulacion(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -68,22 +123,25 @@ export default function NotificacionesClienteScreen() {
     cargarNotificaciones();
   };
 
-  const marcarComoLeida = async (item: NotificacionItem) => {
+const marcarComoLeida = async (item: NotificacionItem) => {
     setLeidasLocales((prev) => ({ ...prev, [item.id]: true }));
+    setNotificaciones((prev) =>
+      prev.map((n) => (n.id === item.id ? { ...n, leida: true } : n))
+    );
 
-    if (item.notificacion_id) {
-      try {
-        await fetch(`${API_BASE}/cliente/notificaciones.php`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            accion: 'marcar_leida',
-            notificacion_id: item.notificacion_id,
-          }),
-        });
-      } catch {
-        // Silencioso
-      }
+    try {
+      await fetch(`${API_BASE}/cliente/notificaciones.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'marcar_leida',
+          usuario_id: usuarioId,
+          notificacion_id: item.notificacion_id,
+          notif_id: item.id,
+        }),
+      });
+    } catch {
+      // Silencioso
     }
   };
 
@@ -93,6 +151,7 @@ export default function NotificacionesClienteScreen() {
       mapa[n.id] = true;
     });
     setLeidasLocales(mapa);
+    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
 
     try {
       await fetch(`${API_BASE}/cliente/notificaciones.php`, {
@@ -159,7 +218,9 @@ export default function NotificacionesClienteScreen() {
   const notificacionesFiltradas = notificaciones.filter((item) => {
     if (filtro === 'todas') return true;
     if (filtro === 'mensaje') return item.categoria === 'mensaje';
-    if (filtro === 'estado') return item.categoria === 'estado' || item.categoria === 'tecnico' || item.categoria === 'logistica';
+    if (filtro === 'estado') {
+      return item.categoria === 'estado' || item.categoria === 'tecnico' || item.categoria === 'logistica';
+    }
     if (filtro === 'pagos') return item.categoria === 'presupuesto' || item.categoria === 'sena';
     return true;
   });
@@ -175,7 +236,14 @@ export default function NotificacionesClienteScreen() {
         </TouchableOpacity>
 
         <View style={{ alignItems: 'center' }}>
-          <Text style={styles.title}>Notificaciones</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Notificaciones</Text>
+            {sinLeerCount > 0 && (
+              <View style={styles.headerBadge}>
+                <Text style={styles.headerBadgeText}>{sinLeerCount}</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.subtitle}>
             {sinLeerCount > 0 ? `${sinLeerCount} novedades sin leer` : 'Estás al día'}
           </Text>
@@ -185,6 +253,15 @@ export default function NotificacionesClienteScreen() {
           <Ionicons name="checkmark-done" size={19} color="#10B981" />
         </TouchableOpacity>
       </View>
+
+      {usandoSimulacion && (
+        <View style={styles.simBanner}>
+          <Ionicons name="sparkles" size={14} color="#38BDF8" />
+          <Text style={styles.simBannerText}>
+            Vista previa activa con alertas simuladas de taller
+          </Text>
+        </View>
+      )}
 
       {/* FILTROS POR CATEGORÍA */}
       <View style={styles.filterScrollWrapper}>
@@ -238,7 +315,11 @@ export default function NotificacionesClienteScreen() {
               return (
                 <TouchableOpacity
                   key={`${item.id}-${index}`}
-                  style={[styles.card, !yaLeida && styles.cardUnread]}
+                  style={[
+                    styles.card,
+                    !yaLeida && styles.cardUnread,
+                    !yaLeida && { borderLeftColor: cfg.color, borderLeftWidth: 3 },
+                  ]}
                   activeOpacity={0.85}
                   onPress={() => marcarComoLeida(item)}
                 >
@@ -261,7 +342,12 @@ export default function NotificacionesClienteScreen() {
                       <View style={styles.ordenRefRow}>
                         <Ionicons name="hardware-chip-outline" size={12} color="#38BDF8" />
                         <Text style={styles.ordenRefText}>{`Orden #${item.reparacion_orden_id}`}</Text>
-                        {!yaLeida ? <View style={styles.unreadDot} /> : null}
+                        {!yaLeida ? (
+                          <View style={styles.unreadPill}>
+                            <View style={styles.unreadDot} />
+                            <Text style={styles.unreadLabel}>NUEVO</Text>
+                          </View>
+                        ) : null}
                       </View>
                     ) : null}
                   </View>
@@ -284,6 +370,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headerBadge: {
+    backgroundColor: '#2563EB',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+  },
+  headerBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
   iconBtn: {
     backgroundColor: '#0D1E42',
     padding: 9,
@@ -293,6 +389,21 @@ const styles = StyleSheet.create({
   },
   title: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
   subtitle: { color: '#38BDF8', fontSize: 11, fontWeight: '600' },
+
+  simBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: 'rgba(37, 99, 235, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  simBannerText: { color: '#BAE6FD', fontSize: 11, fontWeight: '600' },
 
   filterScrollWrapper: { marginBottom: 10 },
   filterRow: { paddingHorizontal: 16, gap: 8 },
@@ -367,10 +478,20 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.05)',
   },
   ordenRefText: { color: '#38BDF8', fontSize: 11, fontWeight: '700', flex: 1 },
+  unreadPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(56, 189, 248, 0.14)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#38BDF8',
   },
+  unreadLabel: { color: '#38BDF8', fontSize: 9, fontWeight: '800' },
 });

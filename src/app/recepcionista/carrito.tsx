@@ -17,15 +17,7 @@ import {
 interface Producto {
   productos_id: number;
   nombre: string;
-  descripcion: string;
   precio_venta: string;
-  garantia: number;
-  observaciones?: string;
-  categoria: string;
-  marca: string;
-  modelo: string;
-  codigo_barra: string;
-  imagen?: string;
   estado_general_id: number;
 }
 
@@ -144,7 +136,7 @@ export default function CarritoScreen() {
   };
 
   const agregarMetodoPago = () => {
-    setPagosSeleccionados([...pagosSeleccionados, { forma_pago_id: 2, nombre: 'Tarjeta Débito/Crédito', monto: '' }]);
+    setPagosSeleccionados([...pagosSeleccionados, { forma_pago_id: 2, nombre: 'Tarjeta', monto: '' }]);
   };
 
   const eliminarMetodoPago = (index: number) => {
@@ -224,8 +216,9 @@ export default function CarritoScreen() {
       if (resultado.estado === 'success') {
         const idVentaGenerado = resultado.venta_id || resultado.id || 'N/D';
         
+        // TE REDIRIGE AUTOMÁTICAMENTE AL TICKET
         router.replace({
-          pathname: './ticket',
+          pathname: '/recepcionista/ticket',
           params: {
             ventaId: String(idVentaGenerado),
             empleadoId: String(empleadoId),
@@ -298,8 +291,9 @@ export default function CarritoScreen() {
         setModalVisible(false);
         const idVentaGenerado = resultado.venta_id || resultado.id || 'N/D';
 
+        // TE REDIRIGE AUTOMÁTICAMENTE AL TICKET
         router.replace({
-          pathname: './ticket',
+          pathname: '/recepcionista/ticket',
           params: {
             ventaId: String(idVentaGenerado),
             empleadoId: String(empleadoId),
@@ -366,9 +360,7 @@ export default function CarritoScreen() {
                   <TouchableOpacity
                     style={[styles.userChip, isSelected && styles.userChipSelected]}
                     onPress={() => {
-                      if (currentId > 0) {
-                        setUsuarioSeleccionado(currentId);
-                      }
+                      if (currentId > 0) setUsuarioSeleccionado(currentId);
                     }}
                   >
                     <Text style={[styles.userChipText, isSelected && styles.userChipTextSelected]}>
@@ -381,9 +373,7 @@ export default function CarritoScreen() {
                 );
               }}
               contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
-              ListEmptyComponent={
-                <Text style={styles.emptyUserText}>No se encontró el cliente.</Text>
-              }
+              ListEmptyComponent={<Text style={styles.emptyUserText}>No se encontró el cliente.</Text>}
             />
           </View>
         )}
@@ -456,7 +446,7 @@ export default function CarritoScreen() {
                   style={[styles.tipoPagoBtn, pago.forma_pago_id === 3 && styles.tipoPagoBtnSelected]}
                   onPress={() => actualizarTipoPago(index, 3, 'Transferencia')}
                 >
-                  <Text style={[styles.tipoPagoText, pago.forma_pago_id === 3 && {color: '#fff'}]}>Transferencia</Text>
+                  <Text style={[styles.tipoPagoText, pago.forma_pago_id === 3 && {color: '#fff'}]}>Transf.</Text>
                 </TouchableOpacity>
               </View>
 

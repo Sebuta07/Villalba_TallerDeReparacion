@@ -5,6 +5,14 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . '/../conexion.php';
 
 try {
+    // Base URL dinámica o fija del servidor
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? '192.168.1.211';
+    // Si el script está en /api_app/cliente/listado_servicios.php, subimos un nivel a /api_app
+    $scriptDir = dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api_app/cliente/listado_servicios.php'));
+    $baseApiUrl = rtrim("$scheme://$host$scriptDir", '/');
+    $uploadsServiciosUrl = $baseApiUrl . '/uploads/servicios/';
+
     // 1. Obtener categorías de servicios activas
     $stmtCat = $conexion->query("SELECT categorias_servicios_id as id, categoria as nombre FROM categorias_servicios WHERE estado_general_id = 1");
     $categorias = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
@@ -27,10 +35,17 @@ try {
 
     $servicios = [];
     foreach ($serviciosCrudos as $serv) {
-        // Manejo de imagen: si tiene archivo cargado usa la ruta del servidor, sino una por defecto
-        $imgUrl = !empty($serv['imagen']) 
-            ? 'http://192.168.1.211/api_app/uploads/servicios/' . $serv['imagen'] 
-            : 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=600&q=85';
+        $rawImg = trim((string)($serv['imagen'] ?? ''));
+
+        if ($rawImg === '') {
+            $imgUrl = $uploadsServiciosUrl . 'default.png';
+        } elseif (preg_match('/^https?:\/\//i', $rawImg)) {
+            $imgUrl = $rawImg;
+        } else {
+            // Limpia posibles prefijos como "uploads/servicios/" o "/api_app/uploads/servicios/"
+            $cleanFile = preg_replace('#^/?(api_app/)?uploads/servicios/#i', '', $rawImg);
+            $imgUrl = $uploadsServiciosUrl . ltrim($cleanFile, '/');
+        }
 
         $servicios[] = [
             "id" => (int)$serv['id'],
@@ -55,4 +70,3 @@ try {
         "mensaje" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
-?>

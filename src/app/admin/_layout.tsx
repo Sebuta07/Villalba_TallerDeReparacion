@@ -17,6 +17,8 @@ export default function AdminLayout() {
 
   const opcionesMenu = [
     { label: 'Menú Principal', route: '/admin' },
+    { label: 'Historial de Reparaciones', route: '/admin/historial_reparaciones' },
+    { label: 'Historial de Productos', route: '/admin/historial_productos' },
     { label: 'Categorías de Productos', route: '/admin/categoria_productos' },
     { label: 'Categoría de Servicios', route: '/admin/categoria_servicios' },
     { label: 'Categorias de Equipos', route: '/admin/categorias_equipo' },
@@ -38,7 +40,6 @@ export default function AdminLayout() {
     { label: 'Servicios', route: '/admin/servicios' },
     { label: 'Telefonos', route: '/admin/telefonos' },
     { label: 'Tipos de Comprobantes', route: '/admin/tipo_comprobante' },
-    { label: 'Tipos de Proveedores', route: '/admin/tipo_proveedor' },
     { label: 'Usuarios', route: '/admin/usuarios' },
   ];
 
@@ -60,12 +61,12 @@ export default function AdminLayout() {
         <Text style={styles.topBarTitle}>Panel Administración</Text>
 
         <TouchableOpacity onPress={() => router.replace('/')}>
-          <Text style={styles.logoutIcon}>🚪</Text>
+          <Text style={styles.logoutIcon}>✕</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <Slot />
+        <Slot/>
       </View>
 
       <Modal
@@ -74,13 +75,11 @@ export default function AdminLayout() {
         transparent={true}
         onRequestClose={() => setMenuVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.backdrop}
-            activeOpacity={1}
-            onPress={() => setMenuVisible(false)}
-          />
-
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
           <View style={styles.drawerContainer}>
             <View style={styles.drawerHeader}>
               <Text style={styles.drawerTitle}>Menú Admin</Text>
@@ -121,7 +120,7 @@ export default function AdminLayout() {
               <Text style={styles.drawerLogoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -141,22 +140,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   hamburgerBtn: { padding: 4 },
-  hamburgerText: { color: '#2563EB', fontSize: 26, fontWeight: 'bold' },
+  hamburgerText: { color: '#2563EB', fontSize: 24, fontWeight: 'bold' },
   topBarTitle: { color: '#0F172A', fontSize: 17, fontWeight: 'bold', letterSpacing: 0.5 },
-  logoutIcon: { fontSize: 20 },
+  logoutIcon: { fontSize: 18, color: '#64748B', fontWeight: 'bold' },
   content: { flex: 1, backgroundColor: '#F4F6FA' },
 
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(7, 16, 38, 0.55)',
     flexDirection: 'row',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
   drawerContainer: {
     width: '78%',
@@ -166,7 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRightWidth: 1,
     borderRightColor: '#E2E8F0',
-    zIndex: 1,
   },
   drawerHeader: {
     flexDirection: 'row',
@@ -178,14 +169,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   drawerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
-  closeBtn: { fontSize: 20, color: '#2563EB', fontWeight: 'bold' },
+  closeBtn: { fontSize: 18, color: '#2563EB', fontWeight: 'bold' },
   menuItem: {
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 6,
   },
-  menuItemActive: { backgroundColor: '#E8F0FE' },
+  menuItemActive: { backgroundColor: '#EFF6FF' },
   menuItemText: { fontSize: 15, color: '#64748B', fontWeight: '500' },
   menuItemTextActive: { color: '#2563EB', fontWeight: 'bold' },
   drawerLogout: {

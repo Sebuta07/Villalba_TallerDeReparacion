@@ -12,71 +12,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once __DIR__ . '/../conexion.php';
-if (!isset($conexion) && isset($pdo)) {
-    $conexion = $pdo;
-}
-
-if (!isset($conexion)) {
-    echo json_encode(["success" => false, "error" => "No se pudo conectar a la base de datos"]);
-    exit;
-}
-
 try {
-    // 1. Órdenes de reparación con su estado y presupuesto
-    $sqlOrdenes = "
+    $host = '127.0.0.1';
+    $db = 'taller_electronica';
+    $user = 'root'; 
+    $pass = '';
+
+    $conexion = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+    $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $comercio_id = isset($_GET['comercio_id']) ? intval($_GET['comercio_id']) : 1;
+
+    // 1. Productos con stock más bajo (alerta de stock, limit 6)
+    $sqlLowStock = "
         SELECT 
-            ro.reparacion_orden_id,
-            ro.diagnostico_cliente,
-            ro.presupuesto_monto,
-            ro.total,
-            eo.nombre AS estado_nombre
-        FROM reparacion_orden ro
-        LEFT JOIN estados_or eo ON ro.estados_or_id = eo.estados_or_id
-        WHERE ro.estado_general_id = 1
-        ORDER BY ro.reparacion_orden_id DESC
-        LIMIT 20
-    ";
-    $ordenes = $conexion->query($sqlOrdenes)->fetchAll(PDO::FETCH_ASSOC);
-
-    // 2. Control de Inventario
-    $sqlInv = "
-        SELECT productos_id, nombre, stock_disponible, precio_venta
+            productos_id,
+            nombre,
+            stock_disponible,
+            stock_minimo
         FROM productos
-        WHERE estado_general_id = 1
-        ORDER BY vendidos DESC
-        LIMIT 30
+        ORDER BY stock_disponible ASC
+        LIMIT 6
     ";
-    $inventario = $conexion->query($sqlInv)->fetchAll(PDO::FETCH_ASSOC);
-
-    // 3. Historial de Reposición de Productos (Pedidos a sucursales)
-    $sqlRep = "
-        SELECT pedidos_sucursales_id, producto_nombre, cantidad_solicitada, estado_pedido, fecha_pedido, hora_pedido
-        FROM pedidos_sucursales
-        WHERE estado_general_id = 1
-        ORDER BY pedidos_sucursales_id DESC
-        LIMIT 20
+    $productosLowStock = $conexion->query($sqlLowStock)->fetchAll(PDO::FETCH_ASSOC);
+    
+    // 2. Top productos más pedidos en detalle_pedido_sucursal
+    $sqlTopPedidos = "
+        SELECT 
+            p.nombre,
+            SUM(dps.stock) AS total_pedido
+        FROM detalle_pedido_sucursal dps
+        INNER JOIN productos p ON dps.productos_id = p.productos_id
+        WHERE dps.estado_general_id = 1
+        GROUP BY dps.productos_id
+        ORDER BY total_pedido DESC
+        LIMIT 5
     ";
-    $reposiciones = $conexion->query($sqlRep)->fetchAll(PDO::FETCH_ASSOC);
-
-    // 4. Lista de ventas / compras en tienda
-    $sqlVentas = "
-        SELECT id_compra AS venta_id, codigo_compra, resumen_productos, total_final AS total, fecha_compra
-        FROM compras_tienda
-        ORDER BY id_compra DESC
-        LIMIT 30
-    ";
-    $ventas = $conexion->query($sqlVentas)->fetchAll(PDO::FETCH_ASSOC);
+    $topPedidos = $conexion->query($sqlTopPedidos)->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
         "success" => true,
-        "ordenes" => $ordenes,
-        "inventario" => $inventario,
-        "reposiciones" => $reposiciones,
-        "ventas" => $ventas
+        "productos_low_stock" => $productosLowStock ?: [],
+        "top_pedidos" => $topPedidos ?: []
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
-    echo json_encode(["success" => false, "error" => $e->getMessage()]);
+    echo json_encode([
+        "success" => false, 
+        "error" => "Error de base de datos: " . $e->getMessage()
+    ]);
 }
 ?>

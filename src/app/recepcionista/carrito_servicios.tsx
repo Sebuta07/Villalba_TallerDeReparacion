@@ -178,7 +178,7 @@ export default function CarritoServiciosScreen() {
     }
   };
 
-  // 2. GEOCODIFICACIÓN INVERSA (Autocompleta calle/barrio y deja coordenadas en observaciones)
+  // 2. GEOCODIFICACIÓN INVERSA
   const realizarGeocodificacionInversa = async (lat: number, lon: number, coordsStr: string) => {
     try {
       const response = await fetch(
@@ -288,7 +288,6 @@ export default function CarritoServiciosScreen() {
       return;
     }
 
-    // Validación de campos de envío si eligió envío a domicilio
     if (tipoEntrega === 'envio') {
       if (!calle.trim() || !barrio.trim()) {
         Alert.alert('Datos de envío incompletos', 'Por favor completa al menos la Calle y el Barrio para el envío a domicilio.');
@@ -331,12 +330,23 @@ export default function CarritoServiciosScreen() {
       }
 
       const data = await enviarOrdenConXHR(formData);
+      
       if (data.success) {
-        Alert.alert(
-          '¡Orden Registrada!',
-          `Código de seguridad: ${data.codigo_seguridad}\n\nEl dispositivo quedó en taller a la espera del diagnóstico técnico.`,
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        // AQUÍ ESTÁ EL CAMBIO PRINCIPAL: Redirigimos al comprobante enviando todos los parámetros necesarios
+        router.replace({
+          pathname: '/recepcionista/comprobante',
+          params: {
+            ordenId: String(data.orden_id || 'N/D'),
+            empleadoId: String(empleadoId),
+            usuarioId: String(usuarioSeleccionado),
+            total: String(calcularTotal()),
+            fecha: new Date().toLocaleString(),
+            numeroSerie: numeroSerie.trim() || 'Sin especificar',
+            imei: imei.trim() || 'Sin especificar',
+            diagnosticoCliente: diagnosticoCliente.trim() || 'Sin observaciones',
+            carrito: JSON.stringify(serviciosCarrito)
+          }
+        });
       } else {
         Alert.alert('Error', data.error || 'No se pudo registrar la orden.');
       }

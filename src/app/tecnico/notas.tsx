@@ -181,7 +181,7 @@ export default function NotasScreen() {
 
         {loading ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#00A884" />
+            <ActivityIndicator size="large" color="#2563EB" />
             <Text style={styles.loaderText}>Cargando tus reparaciones...</Text>
           </View>
         ) : (
@@ -191,7 +191,7 @@ export default function NotasScreen() {
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="chatbubbles-outline" size={60} color="#94A3B8" />
+                <Ionicons name="chatbubbles-outline" size={60} color="#CBD5E1" />
                 <Text style={styles.emptyText}>No tienes reparaciones activas asignadas.</Text>
               </View>
             }
@@ -202,7 +202,7 @@ export default function NotasScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.avatarContainer}>
-                  <Ionicons name="phone-portrait-outline" size={24} color="#FFF" />
+                  <Ionicons name="phone-portrait-outline" size={24} color="#2563EB" />
                 </View>
                 <View style={styles.chatInfo}>
                   <View style={styles.chatHeaderRow}>
@@ -226,15 +226,15 @@ export default function NotasScreen() {
 
   return (
     <SafeAreaView style={styles.containerChat} edges={['top', 'left', 'right']}>
-      <View style={styles.waHeader}>
+      <View style={styles.chatHeader}>
         <TouchableOpacity onPress={() => setOrdenSeleccionada(null)} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <View style={styles.waHeaderInfo}>
-          <Text style={styles.waHeaderTitle} numberOfLines={1}>
+        <View style={styles.chatHeaderInfo}>
+          <Text style={styles.chatHeaderTitle} numberOfLines={1}>
             {ordenSeleccionada.cliente_nombre} {ordenSeleccionada.cliente_apellido}
           </Text>
-          <Text style={styles.waHeaderSub} numberOfLines={1}>
+          <Text style={styles.chatHeaderSub} numberOfLines={1}>
             Orden #{ordenSeleccionada.reparacion_orden_id} • {ordenSeleccionada.marca_nombre} {ordenSeleccionada.modelo_nombre}
           </Text>
         </View>
@@ -254,8 +254,8 @@ export default function NotasScreen() {
           renderItem={({ item }) => {
             const esTecnico = item.remitente === 'tecnico';
             return (
-              <View style={[styles.waBubble, esTecnico ? styles.waBubbleOut : styles.waBubbleIn]}>
-                <Text style={[styles.waRemitente, { color: esTecnico ? '#93C5FD' : '#64748B' }]}>
+              <View style={[styles.bubble, esTecnico ? styles.bubbleOut : styles.bubbleIn]}>
+                <Text style={[styles.bubbleRemitente, { color: esTecnico ? '#BFDBFE' : '#64748B' }]}>
                   {esTecnico ? 'Técnico (Tú)' : 'Cliente'}
                 </Text>
 
@@ -267,18 +267,18 @@ export default function NotasScreen() {
 
                 {item.tipo === 'video' && (
                   <View style={styles.videoContainerBubble}>
-                    <Ionicons name="videocam" size={28} color="#FFF" />
-                    <Text style={{ color: '#FFF', fontSize: 11, marginTop: 4 }}>Video adjunto en el chat</Text>
+                    <Ionicons name="videocam" size={28} color={esTecnico ? '#FFFFFF' : '#64748B'} />
+                    <Text style={{ color: esTecnico ? '#FFFFFF' : '#64748B', fontSize: 11, marginTop: 4 }}>Video adjunto</Text>
                   </View>
                 )}
 
                 {item.mensaje ? (
-                  <Text style={[styles.waMessageText, { color: esTecnico ? '#FFF' : '#0F172A' }]}>
+                  <Text style={[styles.bubbleMessageText, { color: esTecnico ? '#FFFFFF' : '#0F172A' }]}>
                     {item.mensaje}
                   </Text>
                 ) : null}
 
-                <Text style={[styles.waTimestamp, { color: esTecnico ? 'rgba(255,255,255,0.7)' : '#94A3B8' }]}>
+                <Text style={[styles.bubbleTimestamp, { color: esTecnico ? '#DBEAFE' : '#94A3B8' }]}>
                   {item.fecha}
                 </Text>
               </View>
@@ -295,22 +295,22 @@ export default function NotasScreen() {
           </View>
         )}
 
-        <View style={styles.waInputBar}>
+        <View style={styles.inputBar}>
           <TouchableOpacity style={styles.attachButton} onPress={seleccionarMultimedia}>
-            <Ionicons name="add" size={24} color="#8696A0" />
+            <Ionicons name="add" size={26} color="#64748B" />
           </TouchableOpacity>
 
           <TextInput
-            style={styles.waTextInput}
+            style={styles.textInput}
             placeholder="Escribe un mensaje..."
-            placeholderTextColor="#8696A0"
+            placeholderTextColor="#94A3B8"
             value={mensaje}
             onChangeText={setMensaje}
             multiline
           />
 
-          <TouchableOpacity style={styles.waSendButton} onPress={() => enviarDatos(null)}>
-            <Ionicons name="send" size={18} color="#FFF" />
+          <TouchableOpacity style={[styles.sendButton, !mensaje.trim() && { opacity: 0.5 }]} onPress={() => enviarDatos(null)}>
+            <Ionicons name="send" size={16} color="#FFFFFF" style={{ marginLeft: 2 }} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -330,117 +330,140 @@ export default function NotasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B141A' },
-  headerBandeja: { paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#1F2C34' },
-  tituloBandeja: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
-  subtituloBandeja: { fontSize: 13, color: '#8696A0', marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#F4F6FA' },
+  headerBandeja: { paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  tituloBandeja: { fontSize: 22, fontWeight: 'bold', color: '#0F172A' },
+  subtituloBandeja: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loaderText: { color: '#8696A0', marginTop: 10, fontSize: 13 },
+  loaderText: { color: '#64748B', marginTop: 10, fontSize: 13 },
+  
   emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 30 },
-  emptyText: { color: '#8696A0', textAlign: 'center', marginTop: 12, fontSize: 14 },
+  emptyText: { color: '#64748B', textAlign: 'center', marginTop: 12, fontSize: 14, fontWeight: '500' },
   
   chatCard: {
     flexDirection: 'row',
-    backgroundColor: '#111B21',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#222D34'
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2
   },
   avatarContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#00A884',
+    backgroundColor: '#E8F0FE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   chatInfo: { flex: 1 },
-  chatHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  chatNombre: { color: '#E9EDEF', fontSize: 15, fontWeight: 'bold', flex: 1, marginRight: 8 },
-  chatOrdenBadge: { color: '#00A884', fontSize: 12, fontWeight: 'bold', backgroundColor: '#0B332E', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  chatDispositivo: { color: '#8696A0', fontSize: 13, marginBottom: 4 },
-  chatHint: { color: '#536471', fontSize: 11, fontStyle: 'italic' },
+  chatHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  chatNombre: { color: '#0F172A', fontSize: 15, fontWeight: 'bold', flex: 1, marginRight: 8 },
+  chatOrdenBadge: { color: '#2563EB', fontSize: 12, fontWeight: 'bold', backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: '#BFDBFE' },
+  chatDispositivo: { color: '#475569', fontSize: 13, marginBottom: 4 },
+  chatHint: { color: '#94A3B8', fontSize: 11, fontStyle: 'italic' },
 
-  containerChat: { flex: 1, backgroundColor: '#0B141A' },
-  waHeader: {
+  /* ESTILOS DEL CHAT ACTIVO */
+  containerChat: { flex: 1, backgroundColor: '#F8FAFC' },
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#202C33',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderColor: '#222D34'
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 2
   },
-  backBtn: { marginRight: 10, padding: 4 },
-  waHeaderInfo: { flex: 1 },
-  waHeaderTitle: { color: '#E9EDEF', fontSize: 16, fontWeight: 'bold' },
-  waHeaderSub: { color: '#8696A0', fontSize: 11, marginTop: 1 },
-  chatMessageList: { paddingHorizontal: 12, paddingVertical: 16 },
+  backBtn: { marginRight: 12, padding: 4 },
+  chatHeaderInfo: { flex: 1 },
+  chatHeaderTitle: { color: '#0F172A', fontSize: 16, fontWeight: 'bold' },
+  chatHeaderSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
   
-  waBubble: {
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 4,
-    maxWidth: '80%',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+  chatMessageList: { paddingHorizontal: 16, paddingVertical: 20 },
+  
+  bubble: {
+    padding: 12,
+    borderRadius: 14,
+    marginVertical: 6,
+    maxWidth: '85%',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1
   },
-  waBubbleOut: { backgroundColor: '#005C4B', alignSelf: 'flex-end', borderTopRightRadius: 0 },
-  waBubbleIn: { backgroundColor: '#202C33', alignSelf: 'flex-start', borderTopLeftRadius: 0 },
-  waRemitente: { fontSize: 10, fontWeight: 'bold', marginBottom: 2, textTransform: 'uppercase' },
-  waMessageText: { fontSize: 14, lineHeight: 19, marginTop: 4 },
-  waTimestamp: { fontSize: 9, alignSelf: 'flex-end', marginTop: 4 },
+  bubbleOut: { backgroundColor: '#2563EB', alignSelf: 'flex-end', borderTopRightRadius: 4 },
+  bubbleIn: { backgroundColor: '#FFFFFF', alignSelf: 'flex-start', borderTopLeftRadius: 4, borderWidth: 1, borderColor: '#E2E8F0' },
   
-  chatImageMessage: { width: 220, height: 160, borderRadius: 6, marginTop: 4, backgroundColor: '#111' },
-  videoContainerBubble: { width: 200, height: 100, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
+  bubbleRemitente: { fontSize: 10, fontWeight: 'bold', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  bubbleMessageText: { fontSize: 14, lineHeight: 20, marginTop: 2 },
+  bubbleTimestamp: { fontSize: 9, alignSelf: 'flex-end', marginTop: 6, fontWeight: '500' },
+  
+  chatImageMessage: { width: 220, height: 160, borderRadius: 8, marginTop: 6, backgroundColor: '#E2E8F0' },
+  videoContainerBubble: { width: 200, height: 100, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginTop: 6, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
 
-  progressContainer: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#1F2C34' },
-  progressText: { color: '#FFF', fontSize: 11, marginBottom: 4 },
-  progressBarBackground: { width: '100%', height: 4, backgroundColor: '#334155', borderRadius: 2 },
-  progressBarFill: { height: '100%', backgroundColor: '#00A884', borderRadius: 2 },
+  progressContainer: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F1F5F9', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
+  progressText: { color: '#334155', fontSize: 12, marginBottom: 6, fontWeight: '600' },
+  progressBarBackground: { width: '100%', height: 6, backgroundColor: '#E2E8F0', borderRadius: 3 },
+  progressBarFill: { height: '100%', backgroundColor: '#2563EB', borderRadius: 3 },
 
-  waInputBar: {
+  inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#202C33',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
   },
   attachButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     marginRight: 6,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 20
   },
-  waTextInput: {
+  textInput: {
     flex: 1,
-    backgroundColor: '#2A3942',
-    color: '#E9EDEF',
+    backgroundColor: '#F8FAFC',
+    color: '#0F172A',
     borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    maxHeight: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    maxHeight: 120,
     fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
   },
-  waSendButton: {
-    backgroundColor: '#00A884',
+  sendButton: {
+    backgroundColor: '#2563EB',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    marginLeft: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    marginLeft: 10,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3
   },
 
-  modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  modalBackground: { flex: 1, backgroundColor: 'rgba(7, 16, 38, 0.95)', justifyContent: 'center', alignItems: 'center' },
   fullImage: { width: width * 0.95, height: width * 0.95 },
-  modalCloseButton: { position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 },
-  modalCloseText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }
+  modalCloseButton: { position: 'absolute', top: 50, right: 20, zIndex: 10, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 },
+  modalCloseText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' }
 });

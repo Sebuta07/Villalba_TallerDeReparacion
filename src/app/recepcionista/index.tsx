@@ -1,249 +1,205 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.211/fenix_lab/api_app';
+
+interface MetricasRecepcion {
+  equipos_ingresados: number;
+  productos_vendidos: number;
+  total_reparacion: number;
+  total_productos: number;
+  total_general: number;
+}
 
 export default function RecepcionistaScreen() {
-  const router = useRouter();
   const { nombre, apellido, empleadoId } = useLocalSearchParams<{ nombre?: string; apellido?: string; empleadoId?: string }>();
 
   const currentEmpleadoId = empleadoId ? Number(empleadoId) : 1;
   const nombreCompleto = nombre ? `${nombre} ${apellido || ''}` : 'Recepcionista';
 
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const [metricas, setMetricas] = useState<MetricasRecepcion>({
+    equipos_ingresados: 0,
+    productos_vendidos: 0,
+    total_reparacion: 0,
+    total_productos: 0,
+    total_general: 0,
+  });
+
+  const cargarDatosRecepcion = async () => {
+    try {
+      const urlFinal = `${API_BASE}/recepcionista/dashboard_recepcion.php?empleado_id=${currentEmpleadoId}`;
+      const res = await fetch(urlFinal);
+      const text = await res.text();
+      
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        return;
+      }
+      
+      if (json.success) {
+        setMetricas(json.metricas);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarDatosRecepcion();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    cargarDatosRecepcion();
+  };
+
+  // Formato para plata ($ 1.500,00)
+  const formatMoneda = (monto: number) => {
+    return `$ ${Number(monto || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Formato para cantidades enteras (1.500)
+  const formatNumero = (num: number) => {
+    return Number(num || 0).toLocaleString('es-AR');
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* Cabecera / Perfil Ejecutivo */}
-      <View style={styles.headerCard}>
-        <View style={styles.roleBadgeContainer}>
-          <Text style={styles.roleBadgeText}>PANEL DE RECEPCIÓN</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" />}
+      >
+        {/* PANEL DE BIENVENIDA */}
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeText}>¡Bienvenido al panel de recepción, {nombreCompleto}!</Text>
         </View>
-        <Text style={styles.welcomeText}>Hola, {nombreCompleto}</Text>
-        <Text style={styles.subtext}>Sistema integral de gestión de taller y ventas</Text>
 
-        {/* Widget Creativo Re Copado: Indicadores rápidos del sistema */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>Activo</Text>
-            <Text style={styles.statLabel}>Estado de Caja</Text>
+        {loading ? (
+          <View style={styles.loaderBox}>
+            <ActivityIndicator size="large" color="#2563EB" />
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>ID: {currentEmpleadoId}</Text>
-            <Text style={styles.statLabel}>Operador</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>Online</Text>
-            <Text style={styles.statLabel}>Servidor Taller</Text>
-          </View>
-        </View>
-      </View>
+        ) : (
+          <>
+            {/* SECCIÓN 1: RENDIMIENTO OPERATIVO (CANTIDADES) */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Rendimiento Operativo</Text>
+              
+              <View style={styles.metricsGrid}>
+                {/* Equipos Ingresados */}
+                <View style={[styles.metricCard, { borderTopColor: '#2563EB' }]}>
+                  <Text style={styles.metricNumber}>{formatNumero(metricas.equipos_ingresados)}</Text>
+                  <Text style={styles.metricLabel}>Equipos Ingresados</Text>
+                  <Text style={styles.metricSub}>Órdenes registradas</Text>
+                </View>
 
-      {/* Sección Ventas y Stock */}
-      <Text style={styles.sectionTitle}>Ventas y Stock</Text>
-      <View style={styles.grid}>
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/productos',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Listado de Productos</Text>
-            <Text style={styles.cardSub}>Catálogo general de artículos</Text>
-          </View>
-        </TouchableOpacity>
+                {/* Productos Vendidos */}
+                <View style={[styles.metricCard, { borderTopColor: '#F59E0B' }]}>
+                  <Text style={styles.metricNumber}>{formatNumero(metricas.productos_vendidos)}</Text>
+                  <Text style={styles.metricLabel}>Productos Vendidos</Text>
+                  <Text style={styles.metricSub}>Unidades despachadas</Text>
+                </View>
+              </View>
+            </View>
 
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/calculadora',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Calculadora</Text>
-            <Text style={styles.cardSub}>Operaciones y cuentas rápidas</Text>
-          </View>
-        </TouchableOpacity>
+            {/* SECCIÓN 2: RESUMEN DE INGRESOS (PLATA) */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Resumen de Ingresos</Text>
+              
+              <View style={styles.metricsGrid}>
+                {/* Total Reparaciones */}
+                <View style={[styles.metricCard, { borderTopColor: '#8B5CF6' }]}>
+                  <Text style={styles.metricMoney} numberOfLines={1} adjustsFontSizeToFit>{formatMoneda(metricas.total_reparacion)}</Text>
+                  <Text style={styles.metricLabel}>Total Reparación</Text>
+                  <Text style={styles.metricSub}>Facturado en servicio técnico</Text>
+                </View>
 
-        <TouchableOpacity 
-          style={styles.cardFullWidth} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/carrito',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={[styles.cardIndicator, { backgroundColor: '#166534' }]} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Carrito y Facturación</Text>
-            <Text style={styles.cardSub}>Generación de tickets de compra y cobros</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+                {/* Total Productos */}
+                <View style={[styles.metricCard, { borderTopColor: '#06B6D4' }]}>
+                  <Text style={styles.metricMoney} numberOfLines={1} adjustsFontSizeToFit>{formatMoneda(metricas.total_productos)}</Text>
+                  <Text style={styles.metricLabel}>Total Productos</Text>
+                  <Text style={styles.metricSub}>Facturado en tienda</Text>
+                </View>
 
-      {/* Sección Servicios y Reparaciones */}
-      <Text style={styles.sectionTitle}>Servicios y Reparaciones</Text>
-      <View style={styles.grid}>
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/servicios',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Listado de Servicio</Text>
-            <Text style={styles.cardSub}>Gestión técnica de servicios</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={() => router.push('/recepcionista/nueva_orden' as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Nueva Orden</Text>
-            <Text style={styles.cardSub}>Comprobante de recepción</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/diagnostico',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Llamado Diagnóstico</Text>
-            <Text style={styles.cardSub}>Avisos y notas a técnicos</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/avance',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Avance de Reparación</Text>
-            <Text style={styles.cardSub}>Seguimiento de estados</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Sección Equipos */}
-      <Text style={styles.sectionTitle}>Equipos</Text>
-      <View style={styles.grid}>
-        <TouchableOpacity 
-          style={styles.cardFullWidth} 
-          onPress={() => router.push({
-            pathname: '/recepcionista/estado_equipos',
-            params: { empleadoId: currentEmpleadoId }
-          } as any)}
-        >
-          <View style={styles.cardIndicator} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Estado de Equipos</Text>
-            <Text style={styles.cardSub}>Control detallado de ingreso y salida en el taller</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+                {/* TOTAL GENERAL GIGANTE */}
+                <View style={[styles.metricCard, { borderTopColor: '#10B981', width: '100%', marginTop: 12 }]}>
+                  <Text style={[styles.metricMoney, { fontSize: 32 }]} numberOfLines={1} adjustsFontSizeToFit>{formatMoneda(metricas.total_general)}</Text>
+                  <Text style={styles.metricLabel}>Total General</Text>
+                  <Text style={styles.metricSub}>Suma total facturada</Text>
+                </View>
+              </View>
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F6FA' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   content: { padding: 20, paddingBottom: 40 },
-  headerCard: { 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 16, 
-    padding: 20, 
-    marginBottom: 24, 
-    borderWidth: 1, 
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    alignItems: 'center'
-  },
-  roleBadgeContainer: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    marginBottom: 10,
-  },
-  roleBadgeText: { 
-    color: '#2563EB', 
-    fontWeight: 'bold', 
-    fontSize: 11, 
-    letterSpacing: 0.5
-  },
-  welcomeText: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', textAlign: 'center', marginBottom: 4 },
-  subtext: { fontSize: 13, color: '#64748B', textAlign: 'center', marginBottom: 16 },
   
-  statsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  welcomeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    width: '100%',
-    justifyContent: 'space-around',
-    alignItems: 'center'
+    alignItems: 'center',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  statItem: { alignItems: 'center' },
-  statNumber: { fontSize: 13, fontWeight: 'bold', color: '#0F172A' },
-  statLabel: { fontSize: 11, color: '#64748B', marginTop: 2 },
-  statDivider: { width: 1, height: 24, backgroundColor: '#CBD5E1' },
+  welcomeText: { fontSize: 18, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
+  
+  loaderBox: { padding: 40, alignItems: 'center' },
 
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#0F172A', marginTop: 12, marginBottom: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  card: { 
-    backgroundColor: '#FFFFFF', 
-    width: '48%', 
-    borderRadius: 12, 
-    marginBottom: 14, 
+  sectionContainer: { marginBottom: 32 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#0F172A', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingBottom: 6 },
+  
+  /* ESTILOS DE MÉTRICAS */
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  metricCard: {
+    backgroundColor: '#FFFFFF',
+    width: '48%',
+    padding: 18,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#0F172A', 
-    shadowOpacity: 0.04, 
-    shadowRadius: 6, 
+    borderTopWidth: 4,
+    alignItems: 'flex-start',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
     elevation: 1,
-    flexDirection: 'row',
-    overflow: 'hidden'
   },
-  cardFullWidth: {
-    backgroundColor: '#FFFFFF', 
-    width: '100%', 
-    borderRadius: 12, 
-    marginBottom: 14, 
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A', 
-    shadowOpacity: 0.04, 
-    shadowRadius: 6, 
-    elevation: 1,
-    flexDirection: 'row',
-    overflow: 'hidden'
-  },
-  cardIndicator: { width: 4, backgroundColor: '#2563EB' },
-  cardBody: { flex: 1, padding: 14 },
-  cardTitle: { fontSize: 14, fontWeight: 'bold', color: '#0F172A', marginBottom: 2 },
-  cardSub: { fontSize: 11, color: '#64748B', lineHeight: 15 },
+  metricNumber: { fontSize: 26, fontWeight: 'bold', color: '#0F172A', marginBottom: 6 },
+  metricMoney: { fontSize: 18, fontWeight: '900', color: '#0F172A', marginBottom: 6 },
+  metricLabel: { fontSize: 12, fontWeight: 'bold', color: '#334155', marginBottom: 2 },
+  metricSub: { fontSize: 10, color: '#64748B', lineHeight: 14 },
 });
